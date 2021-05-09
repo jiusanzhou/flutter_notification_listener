@@ -90,11 +90,16 @@ class _NotificationsLogState extends State<NotificationsLog> {
                 itemBuilder: (BuildContext context, int idx) {
                   final entry = _log[idx];
                   return ListTile(
-                      // leading:
-                      // Text(entry.timestamp.toString().substring(0, 19)),
-                      title: Text(entry.title??"<<no title>>"),
-                      trailing:
-                      Text(entry.packageName.toString().split('.').last));
+                      trailing: Text(entry.packageName.toString().split('.').last),
+                      title: Container(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(entry.title??"<<no title>>"),
+                            Text(entry.timestamp.toString().substring(0, 19)),
+                          ],
+                        ),
+                      ));
                 })),
         floatingActionButton: FloatingActionButton(
           onPressed: started ? stopListening : startListening,
