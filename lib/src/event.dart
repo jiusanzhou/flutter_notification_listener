@@ -18,16 +18,10 @@ class NotificationEvent {
     this.title,
     this.text,
     this.message,
-    this.extra,
   });
 
   factory NotificationEvent.fromMap(Map<dynamic, dynamic> map) {
-    var extra = {};
-    try {
-      extra = json.decode(map["extra"]??"{}");
-    } catch(e) {
-    
-    }
+
     return NotificationEvent(
       timestamp: DateTime.now(),
 
@@ -35,7 +29,6 @@ class NotificationEvent {
       title: map['title'],
       text: map['text'],
       message: map["message"],
-      extra: extra,
     ).._data = map;
   }
 
@@ -45,6 +38,6 @@ class NotificationEvent {
   }
 }
 
-NotificationEvent newEvent(dynamic data) {
+NotificationEvent newEvent(Map<dynamic, dynamic> data) {
   return NotificationEvent.fromMap(data);
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'dart:async';
 
 import 'package:flutter_notification_listener/flutter_notification_listener.dart';
@@ -34,8 +33,7 @@ class NotificationsLog extends StatefulWidget {
 }
 
 class _NotificationsLogState extends State<NotificationsLog> {
-  AndroidNotificationListener _notifications;
-  StreamSubscription<NotificationEvent> _subscription;
+  
   List<NotificationEvent> _log = [];
   bool started = false;
 
@@ -47,7 +45,15 @@ class _NotificationsLogState extends State<NotificationsLog> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    _notifications = AndroidNotificationListener();
+    NotificationsListener.initialize();
+    NotificationsListener.receivePort.listen((evt) => onData(evt));
+
+    var isR = await NotificationsListener.isRunning;
+    print("""Service is ${!isR ? "not " : ""}aleary running""");
+
+    setState(() {
+      started = isR;
+    });
   }
 
   void onData(NotificationEvent event) {
@@ -58,22 +64,28 @@ class _NotificationsLogState extends State<NotificationsLog> {
   }
 
   void startListening() async {
-    var hasPermission = await _notifications.hasPermission;
+    print("start listening");
+    var hasPermission = await NotificationsListener.hasPermission;
     if (!hasPermission) {
-      _notifications.openPermissionSettings();
+      print("no permission, so open settings");
+      NotificationsListener.openPermissionSettings();
       return;
     }
 
-    try {
-      _subscription = _notifications.notificationStream.listen(onData);
-      setState(() => started = true);
-    } on Exception catch (exception) {
-      print(exception);
+    var isR = await NotificationsListener.isRunning;
+
+    if (!isR) {
+      await NotificationsListener.startService();
     }
+
+    setState(() => started = true);
   }
 
-  void stopListening() {
-    _subscription.cancel();
+  void stopListening() async {
+    print("stop listening");
+
+    NotificationsListener.stopService();
+
     setState(() => started = false);
   }
 
@@ -107,25 +119,5 @@ class _NotificationsLogState extends State<NotificationsLog> {
           child: started ? Icon(Icons.stop) : Icon(Icons.play_arrow),
         ),
       );
-  }
-}
-
-class PermissionLand extends StatefulWidget {
-  @override
-  _PermissionLandState createState() => _PermissionLandState();
-}
-
-class _PermissionLandState extends State<PermissionLand> {
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      
-    );
   }
 }

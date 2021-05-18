@@ -1,6 +1,6 @@
 package im.zoe.labs.flutter_notification_listener
 
-import android.app.Notification
+import android.app.ActivityManager
 import android.content.*
 import android.os.Build
 import android.util.Log
@@ -8,49 +8,44 @@ import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.*
 
 
-class FlutterNotificationListenerPlugin : FlutterPlugin, EventChannel.StreamHandler {
-
-  private lateinit var methodChannel : MethodChannel
-  private lateinit var eventChannel : EventChannel
-
+class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
   private var eventSink: EventChannel.EventSink? = null
-  private var methodHandler : NotificationsCallHandler? = null
 
   private lateinit var mContext: Context
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    Log.e(TAG, "on attached to engine")
+    Log.i(TAG, "on attached to engine")
 
     mContext = flutterPluginBinding.applicationContext
-
-    methodHandler = NotificationsCallHandler(mContext, this)
-
-    // setup the channel
 
     val binaryMessenger = flutterPluginBinding.binaryMessenger
 
     // event stream channel
     EventChannel(binaryMessenger, EVENT_CHANNEL_NAME).setStreamHandler(this)
-
       // method channel
-    MethodChannel(binaryMessenger, METHOD_CHANNEL_NAME).setMethodCallHandler(methodHandler)
+    MethodChannel(binaryMessenger, METHOD_CHANNEL_NAME).setMethodCallHandler(this)
 
-    initPlugin()
+    val receiver = NotificationReceiver()
+    val intentFilter = IntentFilter()
+    intentFilter.addAction(NotificationsHandlerService.NOTIFICATION_INTENT)
+    mContext.registerReceiver(receiver, intentFilter)
+
+    // star the service
+    // startService()
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    methodChannel.setMethodCallHandler(null)
+    // methodChannel.setMethodCallHandler(null)
   }
 
   @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
   override fun onListen(o: Any?, eventSink: EventChannel.EventSink?) {
     this.eventSink = eventSink
-
-    val listenerIntent = Intent(mContext, NotificationsListener::class.java)
-    mContext.startService(listenerIntent)
   }
 
   override fun onCancel(o: Any?) {
@@ -59,15 +54,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, EventChannel.StreamHand
 
   internal inner class NotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-
-      val map = HashMap<String, Any?>()
-      map[NotificationsListener.NOTIFICATION_PACKAGE_NAME] = intent.getStringExtra(NotificationsListener.NOTIFICATION_PACKAGE_NAME)
-      map[NotificationsListener.NOTIFICATION_TITLE] = intent.getStringExtra(NotificationsListener.NOTIFICATION_TITLE)
-      map[NotificationsListener.NOTIFICATION_TEXT] = intent.getStringExtra(NotificationsListener.NOTIFICATION_TEXT)
-      map[NotificationsListener.NOTIFICATION_MESSAGE] = intent.getStringExtra(NotificationsListener.NOTIFICATION_MESSAGE)
-      map[NotificationsListener.NOTIFICATION_EXTRA] = intent.getStringExtra(NotificationsListener.NOTIFICATION_EXTRA)
-
-      eventSink?.success(map)
+      eventSink?.success(intent.getStringExtra(NotificationsHandlerService.NOTIFICATION_INTENT_KEY)?:"{}")
     }
   }
 
@@ -76,22 +63,107 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, EventChannel.StreamHand
 
     private const val EVENT_CHANNEL_NAME = "flutter_notification_listener/events"
     private const val METHOD_CHANNEL_NAME = "flutter_notification_listener/method"
+
+    const val SHARED_PREFERENCES_KEY = "flutter_notification_cache"
+
+    const val CALLBACK_DISPATCHER_HANDLE_KEY = "callback_dispatch_handler"
+    const val CALLBACK_HANDLE_KEY = "callback_handler"
+
+    private val sNotificationCacheLock = Object()
+
+    fun registerAfterReboot(context: Context) {
+      synchronized(sNotificationCacheLock) {
+        startService(context)
+      }
+    }
+
+    private fun initialize(context: Context, args: ArrayList<*>?) {
+      Log.d(TAG, "install callback dispatch ...")
+      val callbackHandle = args!![0] as Long
+      context.getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        .edit()
+        .putLong(CALLBACK_DISPATCHER_HANDLE_KEY, callbackHandle)
+        .apply()
+    }
+
+    fun startService(context: Context): Boolean {
+      if (!NotificationsHandlerService.permissionGiven(context)) {
+        return false
+      }
+
+      // and try to toggle the service to trigger rebind
+      with(NotificationsHandlerService) {
+        /* Start the notification service once permission has been given. */
+        val listenerIntent = Intent(context, NotificationsHandlerService::class.java)
+        context.startService(listenerIntent)
+
+        // and try to toggle the service to trigger rebind
+        disableServiceSettings(context)
+        enableServiceSettings(context)
+      }
+
+      return true
+    }
+
+    @Suppress("DEPRECATION")
+    fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
+      val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+      for (service in manager!!.getRunningServices(Int.MAX_VALUE)) {
+        if (serviceClass.name.equals(service.service.className)) {
+          return true
+        }
+      }
+      return false
+    }
+
+    fun registerEventHandle(context: Context, args: ArrayList<*>?) {
+      val callbackHandle = args!![0] as Long
+      context.getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        .edit()
+        .putLong(CALLBACK_HANDLE_KEY, callbackHandle)
+        .apply()
+    }
   }
 
-  fun startService(): Boolean {
-    if (!NotificationsCallHandler.permissionGiven(mContext)) return false;
-    /* Start the notification service once permission has been given. */
-    val listenerIntent = Intent(mContext, NotificationsListener::class.java)
-    mContext.startService(listenerIntent)
-    return true
-  }
-
-  private fun initPlugin() {
-    val receiver = NotificationReceiver()
-    val intentFilter = IntentFilter()
-    intentFilter.addAction(NotificationsListener.NOTIFICATION_INTENT)
-    mContext.registerReceiver(receiver, intentFilter)
-
-    startService()
+  override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+    val args = call.arguments<ArrayList<*>>()
+    when (call.method) {
+      "plugin.initialize" -> {
+          initialize(mContext, args)
+          result.success(true)
+      }
+      "plugin.startService" -> {
+        result.success(startService(mContext))
+      }
+      "plugin.stopService" -> {
+        val intent = Intent(mContext, NotificationsHandlerService::class.java)
+        intent.action = NotificationsHandlerService.ACTION_SHUTDOWN
+        mContext.startService(intent)
+        Log.d(TAG, "try to stop service ${NotificationsHandlerService::class.java}")
+        return result.success(true)
+      }
+      "plugin.hasPermission" -> {
+        return result.success(NotificationsHandlerService.permissionGiven(mContext))
+      }
+      "plugin.openPermissionSettings" -> {
+        return result.success(NotificationsHandlerService.openPermissionSettings(mContext))
+      }
+      "plugin.isServiceRunning" -> {
+        return result.success(
+          isServiceRunning(
+            mContext,
+            NotificationsHandlerService::class.java
+          )
+        )
+      }
+      "plugin.registerEventHandle" -> {
+        registerEventHandle(mContext, args)
+      }
+      // TODO: register handle with filter
+      "setFilter" -> {
+        // TODO
+      }
+      else -> result.notImplemented()
+    }
   }
 }
