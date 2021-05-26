@@ -41,50 +41,63 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
                   while (!queue.isEmpty()) sendEvent(queue.remove())
                   sServiceStarted.set(true)
               }
+              return result.success(true)
           }
           "service.promoteToForeground" -> {
               // add data
-              val title = call.argument<String?>("title")
-              val content = call.argument<String?>("content")
+              val title = call.argument<String>("title")
+              val content = call.argument<String>("content")
 
-              // first is not running already, start at first
-              if (!FlutterNotificationListenerPlugin.isServiceRunning(mContext, this.javaClass)) {
-                  FlutterNotificationListenerPlugin.startService(mContext)
-              }
-
-              // take a wake lock
-              (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-                  newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG).apply {
-                      setReferenceCounted(false)
-                      acquire()
-                  }
-              }
-
-              // send a notification
-              val channel = NotificationChannel(CHANNEL_ID, "Flutter Notifications Listener Plugin", NotificationManager.IMPORTANCE_LOW)
-              val imageId = resources.getIdentifier("ic_launcher", "mipmap", packageName)
-
-              (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
-              val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                  .setContentTitle(title).setContentText(content).setSmallIcon(imageId).setPriority(
-                      NotificationCompat.PRIORITY_HIGH).build()
-
-              Log.d(TAG, "promote the service to foreground")
-              startForeground(ONGOING_NOTIFICATION_ID, notification)
+              return result.success(promoteToForeground(title, content))
           }
           "service.demoteToBackground" -> {
-              Log.d(TAG, "demote the service to background")
-              (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-                  newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG).apply {
-                      if (isHeld) release()
-                  }
-              }
-              stopForeground(true)
+              return result.success(demoteToBackground())
           }
           else -> {
               result.notImplemented()
           }
       }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun promoteToForeground(title: String?, content: String?): Boolean{
+
+        // first is not running already, start at first
+        if (!FlutterNotificationListenerPlugin.isServiceRunning(mContext, this.javaClass)) {
+            FlutterNotificationListenerPlugin.startService(mContext)
+        }
+
+        // take a wake lock
+        (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG).apply {
+                setReferenceCounted(false)
+                acquire()
+            }
+        }
+
+        // send a notification
+        val channel = NotificationChannel(CHANNEL_ID, "Flutter Notifications Listener Plugin", NotificationManager.IMPORTANCE_LOW)
+        val imageId = resources.getIdentifier("ic_launcher", "mipmap", packageName)
+
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(title).setContentText(content).setSmallIcon(imageId).setPriority(
+                NotificationCompat.PRIORITY_HIGH).build()
+
+        Log.d(TAG, "promote the service to foreground")
+        startForeground(ONGOING_NOTIFICATION_ID, notification)
+        return true
+    }
+
+    fun demoteToBackground(): Boolean {
+        Log.d(TAG, "demote the service to background")
+        (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG).apply {
+                if (isHeld) release()
+            }
+        }
+        stopForeground(true)
+        return true
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
