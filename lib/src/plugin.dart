@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 
 import './event.dart';
 
+typedef EventCallbackFunc = void Function(NotificationEvent evt);
+
 class NotificationsListener {
   static const CHANNELID = "flutter_notification_listener";
   static const SEND_PORT_NAME = "notifications_send_port";
@@ -22,6 +24,8 @@ class NotificationsListener {
   static ReceivePort get receivePort {
     if (_receivePort == null) {
       _receivePort = ReceivePort();
+      // remove the old one at first.
+      IsolateNameServer.removePortNameMapping(SEND_PORT_NAME);
       IsolateNameServer.registerPortWithName(_receivePort.sendPort, SEND_PORT_NAME);
     }
     return _receivePort;
@@ -36,7 +40,11 @@ class NotificationsListener {
   }
 
   // Initialize the plugin and request relevant permissions from the user.
-  static Future<void> initialize() async {
+  static Future<void> initialize({
+    EventCallbackFunc callbackHandle = _defaultCallbackHandle,
+  }) async {
+    assert(callbackHandle != null);
+
     final CallbackHandle _callbackDispatch =
         PluginUtilities.getCallbackHandle(callbackDispatcher);
     await _methodChannel.invokeMethod('plugin.initialize',
@@ -44,10 +52,10 @@ class NotificationsListener {
 
     // register event handler
     // register the default event handler
-    await registerEventHandle(_callbackHandle);
+    await registerEventHandle(callbackHandle);
   }
 
-  static Future<void> registerEventHandle(Function callback) async {
+  static Future<void> registerEventHandle(EventCallbackFunc callback) async {
     final CallbackHandle  _callback =
         PluginUtilities.getCallbackHandle(callback);
     await _methodChannel.invokeMethod('plugin.registerEventHandle',
@@ -74,11 +82,10 @@ class NotificationsListener {
   static Future<void> demoteToBackground() async =>
       await _bgMethodChannel.invokeMethod('service.demoteToBackground');
 
-  static void _callbackHandle(NotificationEvent evt) {
+  static void _defaultCallbackHandle(NotificationEvent evt) {
     final SendPort _send = IsolateNameServer.lookupPortByName(SEND_PORT_NAME);
-    if (_send == null) print("IsolateNameServer: an not find send $SEND_PORT_NAME");
-
-    print("[default callback handler] [send isolate nameserver] $evt");
+    print("[default callback handler] [send isolate nameserver]");
+    if (_send == null) print("IsolateNameServer: can not find send $SEND_PORT_NAME");
     _send?.send(evt);
   }
 }
@@ -98,11 +105,10 @@ void callbackDispatcher() {
               CallbackHandle.fromRawHandle(args[0]));
 
           if (callback == null) {
-            print("callback is not register: $evt");
+            print("callback is not register: ${args[0]}");
             return;
           }
 
-          print("[background method channel] $evt");
           callback(evt);
         }
         break;

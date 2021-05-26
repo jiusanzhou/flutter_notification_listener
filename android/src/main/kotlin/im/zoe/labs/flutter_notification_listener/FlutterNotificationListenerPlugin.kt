@@ -30,13 +30,13 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       // method channel
     MethodChannel(binaryMessenger, METHOD_CHANNEL_NAME).setMethodCallHandler(this)
 
+    // TODO: remove those code
     val receiver = NotificationReceiver()
     val intentFilter = IntentFilter()
     intentFilter.addAction(NotificationsHandlerService.NOTIFICATION_INTENT)
     mContext.registerReceiver(receiver, intentFilter)
 
-    // star the service
-    // startService()
+    Log.i(TAG, "attached engine finished")
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
@@ -105,6 +105,16 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       return true
     }
 
+    fun stopService(context: Context): Boolean {
+      if (!isServiceRunning(context, NotificationsHandlerService::class.java)) return true
+
+      val intent = Intent(context, NotificationsHandlerService::class.java)
+      intent.action = NotificationsHandlerService.ACTION_SHUTDOWN
+      context.startService(intent)
+      // context.stopService(intent)
+      return true
+    }
+
     @Suppress("DEPRECATION")
     fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
       val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
@@ -129,18 +139,14 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
     val args = call.arguments<ArrayList<*>>()
     when (call.method) {
       "plugin.initialize" -> {
-          initialize(mContext, args)
-          result.success(true)
+        initialize(mContext, args)
+        return result.success(true)
       }
       "plugin.startService" -> {
-        result.success(startService(mContext))
+        return result.success(startService(mContext))
       }
       "plugin.stopService" -> {
-        val intent = Intent(mContext, NotificationsHandlerService::class.java)
-        intent.action = NotificationsHandlerService.ACTION_SHUTDOWN
-        mContext.startService(intent)
-        Log.d(TAG, "try to stop service ${NotificationsHandlerService::class.java}")
-        return result.success(true)
+        return result.success(stopService(mContext))
       }
       "plugin.hasPermission" -> {
         return result.success(NotificationsHandlerService.permissionGiven(mContext))
@@ -157,7 +163,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
         )
       }
       "plugin.registerEventHandle" -> {
-        registerEventHandle(mContext, args)
+        return registerEventHandle(mContext, args)
       }
       // TODO: register handle with filter
       "setFilter" -> {

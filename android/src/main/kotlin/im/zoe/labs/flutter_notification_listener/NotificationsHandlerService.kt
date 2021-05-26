@@ -88,7 +88,6 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "onStartCommand ...")
         // if get shutdown release the wake lock
         when (intent?.action) {
             ACTION_SHUTDOWN -> {
@@ -204,31 +203,42 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
     }
 
     private fun startListenerService(context: Context) {
+
+        Log.d(TAG, "on call start listener service")
+
         synchronized(sServiceStarted) {
             mContext = context
 
+            Log.d(TAG, "get the lock")
+
             // already started
-            if (sBackgroundFlutterEngine != null) return
+            if (sBackgroundFlutterEngine == null) {
 
-            // start the bg flutter engine
-            val callbackDispatchHandle = context.getSharedPreferences(FlutterNotificationListenerPlugin.SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
-                .getLong(FlutterNotificationListenerPlugin.CALLBACK_DISPATCHER_HANDLE_KEY, 0)
+                Log.d(TAG, "ok let's init")
 
-            if (callbackDispatchHandle == 0L) {
-                Log.e(TAG, "Fatal: no callback register")
-                return
+                // start the bg flutter engine
+                val callbackDispatchHandle = context.getSharedPreferences(FlutterNotificationListenerPlugin.SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+                    .getLong(FlutterNotificationListenerPlugin.CALLBACK_DISPATCHER_HANDLE_KEY, 0)
+
+                if (callbackDispatchHandle == 0L) {
+                    Log.e(TAG, "Fatal: no callback register")
+                    return
+                }
+
+                val callbackInfo = FlutterCallbackInformation.lookupCallbackInformation(callbackDispatchHandle)
+
+                Log.i(TAG, "create flutter engine")
+                sBackgroundFlutterEngine = FlutterEngine(context)
+
+                val args = DartExecutor.DartCallback(context.assets, FlutterInjector.instance().flutterLoader().findAppBundlePath(), callbackInfo)
+
+                // register callback handle
+                sBackgroundFlutterEngine!!.dartExecutor.executeDartCallback(args)
             }
 
-            val callbackInfo = FlutterCallbackInformation.lookupCallbackInformation(callbackDispatchHandle)
-
-            Log.i(TAG, "Starting NotificationsListenerService ...")
-            sBackgroundFlutterEngine = FlutterEngine(context)
-
-            val args = DartExecutor.DartCallback(context.assets, FlutterInjector.instance().flutterLoader().findAppBundlePath(), callbackInfo)
-
-            // register callback handle
-            sBackgroundFlutterEngine!!.dartExecutor.executeDartCallback(args)
         }
+
+        Log.d(TAG, "init finished")
 
         mBackgroundChannel = MethodChannel(sBackgroundFlutterEngine!!.dartExecutor.binaryMessenger, BG_METHOD_CHANNEL_NAME)
         mBackgroundChannel.setMethodCallHandler(this)
@@ -240,6 +250,8 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
             callbackHandle = mContext.getSharedPreferences(FlutterNotificationListenerPlugin.SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
                 .getLong(FlutterNotificationListenerPlugin.CALLBACK_HANDLE_KEY, 0)
         }
+
+        // why mBackgroundChannel can be null?
 
         // don't care about the method name
         mBackgroundChannel.invokeMethod("sink_event", listOf(callbackHandle, evt))

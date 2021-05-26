@@ -1,3 +1,6 @@
+import 'dart:isolate';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -36,17 +39,36 @@ class _NotificationsLogState extends State<NotificationsLog> {
   
   List<NotificationEvent> _log = [];
   bool started = false;
+  bool _loading = false;
+
+  ReceivePort port = ReceivePort();
 
   @override
   void initState() {
-    super.initState();
     initPlatformState();
+    super.initState();
+  }
+
+  // we must use static method, to handle in background
+  static void _callback(NotificationEvent evt) {
+    print("send evt to ui: $evt");
+    final SendPort send = IsolateNameServer.lookupPortByName("_listener_");
+    if (send == null) print("can't find the sender");
+    send?.send(evt);
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    NotificationsListener.initialize();
-    NotificationsListener.receivePort.listen((evt) => onData(evt));
+
+    NotificationsListener.initialize(callbackHandle: _callback);
+
+    // this can fix restart<debug> can't handle error
+    IsolateNameServer.removePortNameMapping("_listener_");
+    IsolateNameServer.registerPortWithName(port.sendPort, "_listener_");
+    port.listen((message) => onData(message));
+
+    // don't use the default receivePort
+    // NotificationsListener.receivePort.listen((evt) => onData(evt));
 
     var isR = await NotificationsListener.isRunning;
     print("""Service is ${!isR ? "not " : ""}aleary running""");
@@ -65,6 +87,9 @@ class _NotificationsLogState extends State<NotificationsLog> {
 
   void startListening() async {
     print("start listening");
+    setState(() {
+      _loading = true;
+    });
     var hasPermission = await NotificationsListener.hasPermission;
     if (!hasPermission) {
       print("no permission, so open settings");
@@ -78,15 +103,25 @@ class _NotificationsLogState extends State<NotificationsLog> {
       await NotificationsListener.startService();
     }
 
-    setState(() => started = true);
+    setState(() { 
+      started = true;
+      _loading = false;
+    });
   }
 
   void stopListening() async {
     print("stop listening");
 
-    NotificationsListener.stopService();
+    setState(() {
+      _loading = true;
+    });
 
-    setState(() => started = false);
+    await NotificationsListener.stopService();
+
+    setState(() {
+      started = false;
+      _loading = false;
+    });
   }
 
   @override
@@ -116,7 +151,7 @@ class _NotificationsLogState extends State<NotificationsLog> {
         floatingActionButton: FloatingActionButton(
           onPressed: started ? stopListening : startListening,
           tooltip: 'Start/Stop sensing',
-          child: started ? Icon(Icons.stop) : Icon(Icons.play_arrow),
+          child: _loading ? Icon(Icons.close) : (started ? Icon(Icons.stop) : Icon(Icons.play_arrow)),
         ),
       );
   }
