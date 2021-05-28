@@ -1,7 +1,7 @@
 package im.zoe.labs.flutter_notification_listener
 
 import android.app.Notification
-import android.os.Build
+import android.os.Bundle
 import android.service.notification.StatusBarNotification
 import java.lang.reflect.Field
 
@@ -9,27 +9,56 @@ import java.lang.reflect.Field
 class NotificationEvent {
     companion object {
         private const val NOTIFICATION_PACKAGE_NAME = "package_name"
-        private const val NOTIFICATION_TITLE = "title"
-        private const val NOTIFICATION_TEXT = "text"
+        private const val NOTIFICATION_TIMESTAMP = "timestamp"
+
+        /**
         private const val NOTIFICATION_MESSAGE = "message"
+        private const val NOTIFICATION_OBJECT = "object"
+        private const val NOTIFICATION_TITLE = "title"
+        private const val NOTIFICATION_TEXT = "text"*/
 
-        fun fromSbn(sbn: StatusBarNotification): Map<String, *> {
-            val map = HashMap<String, Any?>()
-
-            // Retrieve package name to set as title.
-            val packageName = sbn.packageName
+        fun fromSbn(sbn: StatusBarNotification): Map<String, Any?> {
+            // val map = HashMap<String, Any?>()
 
             // Retrieve extra object from notification to extract payload.
             val notify = sbn.notification
-            val extras = notify?.extras
 
-            map[NOTIFICATION_PACKAGE_NAME] =  packageName
-            map[NOTIFICATION_TITLE] =   extras?.getString(Notification.EXTRA_TITLE)
-            map[NOTIFICATION_TEXT] =   extras?.getString(Notification.EXTRA_TEXT)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                map[NOTIFICATION_MESSAGE] =   extras?.getString(Notification.EXTRA_MESSAGES)
+            val map = turnExtraToMap(notify?.extras)
+
+            // add 2 sbn fields
+            map[NOTIFICATION_TIMESTAMP] = sbn.postTime
+            map[NOTIFICATION_PACKAGE_NAME] =  sbn.packageName
+
+            // map[NOTIFICATION_OBJECT] = getNotifyInfo(notify)
+
+            return map
+        }
+
+        private val EXTRA_KEYS_WHITE_LIST = arrayOf(
+            Notification.EXTRA_TITLE,
+            Notification.EXTRA_TEXT,
+            Notification.EXTRA_SUB_TEXT,
+            Notification.EXTRA_SUMMARY_TEXT,
+            Notification.EXTRA_TEXT_LINES,
+            Notification.EXTRA_BIG_TEXT,
+            Notification.EXTRA_INFO_TEXT,
+            Notification.EXTRA_SHOW_WHEN
+        )
+
+        private fun turnExtraToMap(extras: Bundle?): HashMap<String, Any?> {
+            val map = HashMap<String, Any?>()
+            if (extras == null) return map
+            val ks: Set<String> = extras.keySet()
+            val iterator = ks.iterator()
+            while (iterator.hasNext()) {
+                val key = iterator.next()
+                if (!EXTRA_KEYS_WHITE_LIST.contains(key)) continue
+
+                val bits = key.split(".")
+                val nKey = bits[bits.size - 1]
+
+                map[nKey] = extras.get(key)
             }
-
             return map
         }
 
