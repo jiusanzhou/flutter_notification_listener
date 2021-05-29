@@ -3,7 +3,8 @@
 import 'dart:convert';
 
 class NotificationEvent {
-  DateTime timestamp;
+  DateTime createAt;
+  int timestamp;
   String packageName;
   String title;
   String text;
@@ -13,22 +14,23 @@ class NotificationEvent {
   dynamic _data;
 
   NotificationEvent({
-    this.timestamp,
+    this.createAt,
     this.packageName,
     this.title,
     this.text,
     this.message,
+    this.timestamp,
   });
 
   factory NotificationEvent.fromMap(Map<dynamic, dynamic> map) {
 
     return NotificationEvent(
-      timestamp: DateTime.now(),
-
+      createAt: DateTime.now(),
       packageName: map['package_name'],
       title: map['title'],
       text: map['text'],
       message: map["message"],
+      timestamp: map["timestamp"]
     ).._data = map;
   }
 
