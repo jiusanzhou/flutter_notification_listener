@@ -143,7 +143,7 @@ class _NotificationsLogState extends State<NotificationsLog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(entry.title??"<<no title>>"),
-                            Text(entry.timestamp.toString().substring(0, 19)),
+                            Text(entry.createAt.toString().substring(0, 19)),
                           ],
                         ),
                       ));
