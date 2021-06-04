@@ -163,7 +163,8 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
         )
       }
       "plugin.registerEventHandle" -> {
-        return registerEventHandle(mContext, args)
+        registerEventHandle(mContext, args)
+        return result.success(true)
       }
       // TODO: register handle with filter
       "setFilter" -> {

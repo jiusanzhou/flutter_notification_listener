@@ -44,7 +44,7 @@ class NotificationsListener {
     EventCallbackFunc callbackHandle = _defaultCallbackHandle,
   }) async {
     assert(callbackHandle != null);
-
+    
     final CallbackHandle _callbackDispatch =
         PluginUtilities.getCallbackHandle(callbackDispatcher);
     await _methodChannel.invokeMethod('plugin.initialize',
