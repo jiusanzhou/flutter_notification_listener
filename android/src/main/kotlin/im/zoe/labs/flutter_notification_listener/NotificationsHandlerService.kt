@@ -54,6 +54,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
               return result.success(demoteToBackground())
           }
           else -> {
+              Log.d(TAG, "unknown method ${call.method}")
               result.notImplemented()
           }
       }

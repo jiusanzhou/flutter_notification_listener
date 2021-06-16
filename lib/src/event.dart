@@ -9,7 +9,6 @@ class NotificationEvent {
   String title;
   String text;
   String message;
-  dynamic extra;
 
   dynamic _data;
 
@@ -21,6 +20,8 @@ class NotificationEvent {
     this.message,
     this.timestamp,
   });
+
+  Map<dynamic, dynamic> get raw => _data;
 
   factory NotificationEvent.fromMap(Map<dynamic, dynamic> map) {
 
