@@ -2,12 +2,13 @@
 
 # flutter_notification_listener
 
-Flutter Plugin to listen to all incoming notifications for Android.
-
-> :warning: This plugin is Android only.
 
 [![Version](https://img.shields.io/pub/v/flutter_notification_listener.svg)](https://pub.dartlang.org/packages/flutter_notification_listener)
 [![License](https://img.shields.io/badge/license-AL2-blue.svg)](https://github.com/jiusanzhou/flutter_notification_listener/blob/master/LICENSE)
+
+Flutter Plugin to listen to all incoming notifications for Android.
+
+> :warning: This plugin is Android only.
 
 
 </div>
