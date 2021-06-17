@@ -12,6 +12,8 @@ Flutter Plugin to listen to all incoming notifications for Android.
 
 </div>
 
+---
+
 ### Features
 
 - **Service**: start a service to listen the notifications.
