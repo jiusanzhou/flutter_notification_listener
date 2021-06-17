@@ -8,6 +8,7 @@ Flutter Plugin to listen to all incoming notifications for Android.
 
 - **Service**: start a service to listen the notifications.
 - **Easy**: you can get the notifaction fields: `timestamp`, `title`, `message` and `package`.
+- **Backgrounded**: execute the dart code in the background.
 
 **Note:** If have any fields to add, feel free to pull request.
 
@@ -41,13 +42,23 @@ If you want to start the service after reboot, also should put the following cod
 **2. Init the plugin and add listen handelr**
 
 ```dart
+void onData(NotificationEvent event) {
+    print(event.toString());
+}
+
 Future<void> initPlatformState() async {
     NotificationsListener.initialize();
     NotificationsListener.receivePort.listen((evt) => onData(evt));
+
+    // or you can register your static function
+    NotificationsListener.initialize(callbackHandle: _callback);
 }
 
-void onData(NotificationEvent event) {
-    print(event.toString());
+static void _callback(NotificationEvent evt) {
+    print("send evt to ui: $evt");
+    final SendPort send = IsolateNameServer.lookupPortByName("_listener_");
+    if (send == null) print("can't find the sender");
+    send?.send(evt);
 }
 ```
 
@@ -86,5 +97,5 @@ Please check the [./example/lib/main.dart](./example/lib/main.dart) for more det
 - **isRunning**: check if the service is already running.
 - **startService()**: start the listening service.
 - **stopService()**: stop the listening service.
-- **registerEventHandle(Function callback)**:  register the event handler.
+- **registerEventHandle(Function callback)**:  register the event handler which will be called from android service, **shoube be static function**.
 
