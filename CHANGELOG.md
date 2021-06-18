@@ -1,3 +1,10 @@
+## 1.0.4
+
+- chore
+## 1.0.3
+
+- remove extra
+
 ## 1.0.1
 
 - fix dart in backgroun run
