@@ -56,8 +56,12 @@ class NotificationEvent {
 
                 val bits = key.split(".")
                 val nKey = bits[bits.size - 1]
+                var nVal = extras.get(key)
 
-                map[nKey] = extras.get(key)
+                // is there any other type array?
+                if (nVal is Array<*>) nVal = nVal.map { it.toString() }
+
+                map[nKey] = nVal
             }
             return map
         }
