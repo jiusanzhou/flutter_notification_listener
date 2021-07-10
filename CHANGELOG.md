@@ -1,6 +1,11 @@
+## 1.0.6
+
+- fix: charseq cause excatpion
+
 ## 1.0.5
 
 - fix: textLines cause panic
+- chore: format code
 
 ## 1.0.4
 

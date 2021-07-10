@@ -56,14 +56,19 @@ class NotificationEvent {
 
                 val bits = key.split(".")
                 val nKey = bits[bits.size - 1]
-                var nVal = extras.get(key)
 
-                // is there any other type array?
-                if (nVal is Array<*>) nVal = nVal.map { it.toString() }
-
-                map[nKey] = nVal
+                map[nKey] = marshalled(extras.get(key) as Object?)
             }
             return map
+        }
+
+        private fun marshalled(v: Object?): Any? {
+            return when (v) {
+                is CharSequence -> v.toString();
+                is Array<*> -> v.map { marshalled(it as Object?) }
+                // TODO: turn other types which cause exception
+                else -> v;
+            }
         }
 
         @Suppress("DEPRECATION")
