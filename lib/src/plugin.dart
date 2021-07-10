@@ -48,7 +48,6 @@ class NotificationsListener {
   static Future<void> initialize({
     EventCallbackFunc callbackHandle = _defaultCallbackHandle,
   }) async {
-
     final CallbackHandle _callbackDispatch =
         PluginUtilities.getCallbackHandle(callbackDispatcher)!;
     await _methodChannel.invokeMethod(

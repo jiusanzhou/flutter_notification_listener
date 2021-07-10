@@ -16,7 +16,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
   @override
   void initState() {
     super.initState();
@@ -36,7 +35,6 @@ class NotificationsLog extends StatefulWidget {
 }
 
 class _NotificationsLogState extends State<NotificationsLog> {
-  
   List<NotificationEvent> _log = [];
   bool started = false;
   bool _loading = false;
@@ -59,7 +57,6 @@ class _NotificationsLogState extends State<NotificationsLog> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-
     NotificationsListener.initialize(callbackHandle: _callback);
 
     // this can fix restart<debug> can't handle error
@@ -103,7 +100,7 @@ class _NotificationsLogState extends State<NotificationsLog> {
       await NotificationsListener.startService();
     }
 
-    setState(() { 
+    setState(() {
       started = true;
       _loading = false;
     });
@@ -127,32 +124,35 @@ class _NotificationsLogState extends State<NotificationsLog> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Notifications Listener Example'),
-        ),
-        body: Center(
-            child: ListView.builder(
-                itemCount: _log.length,
-                reverse: true,
-                itemBuilder: (BuildContext context, int idx) {
-                  final entry = _log[idx];
-                  return ListTile(
-                      trailing: Text(entry.packageName.toString().split('.').last),
-                      title: Container(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(entry.title??"<<no title>>"),
-                            Text(entry.createAt.toString().substring(0, 19)),
-                          ],
-                        ),
-                      ));
-                })),
-        floatingActionButton: FloatingActionButton(
-          onPressed: started ? stopListening : startListening,
-          tooltip: 'Start/Stop sensing',
-          child: _loading ? Icon(Icons.close) : (started ? Icon(Icons.stop) : Icon(Icons.play_arrow)),
-        ),
-      );
+      appBar: AppBar(
+        title: Text('Notifications Listener Example'),
+      ),
+      body: Center(
+          child: ListView.builder(
+              itemCount: _log.length,
+              reverse: true,
+              itemBuilder: (BuildContext context, int idx) {
+                final entry = _log[idx];
+                return ListTile(
+                    trailing:
+                        Text(entry.packageName.toString().split('.').last),
+                    title: Container(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(entry.title ?? "<<no title>>"),
+                          Text(entry.createAt.toString().substring(0, 19)),
+                        ],
+                      ),
+                    ));
+              })),
+      floatingActionButton: FloatingActionButton(
+        onPressed: started ? stopListening : startListening,
+        tooltip: 'Start/Stop sensing',
+        child: _loading
+            ? Icon(Icons.close)
+            : (started ? Icon(Icons.stop) : Icon(Icons.play_arrow)),
+      ),
+    );
   }
 }

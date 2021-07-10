@@ -1,3 +1,7 @@
+## 1.0.5
+
+- fix: textLines cause panic
+
 ## 1.0.4
 
 - chore
