@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui';
 import 'dart:async';
@@ -72,8 +73,22 @@ class NotificationsListener {
   }
 
   /// Start the service
-  static Future<bool?> startService() async {
-    return await _methodChannel.invokeMethod('plugin.startService');
+  static Future<bool?> startService({
+    bool foreground = true,
+    String subTitle = "",
+    bool showWhen = false,
+    String title = "Notification Listener",
+    String description = "Service is running",
+  }) async {
+    var data = {};
+    data["foreground"] = foreground;
+    data["subTitle"] = subTitle;
+    data["showWhen"] = showWhen;
+    data["title"] = title;
+    data["description"] = description;
+
+    return await _methodChannel
+        .invokeMethod('plugin.startService', [jsonEncode(data)]);
   }
 
   /// Stop the service
@@ -81,14 +96,25 @@ class NotificationsListener {
     return await _methodChannel.invokeMethod('plugin.stopService');
   }
 
-  /// promoteToForeground TODO:
-  static Future<void> promoteToForeground(String title, String content) async =>
-      await _bgMethodChannel.invokeMethod('service.promoteToForeground', {
-        "title": title,
-        "content": content,
-      });
+  /// promoteToForeground
+  static Future<void> promoteToForeground(
+    String title, {
+    String subTitle = "",
+    bool showWhen = false,
+    String description = "Service is running",
+  }) async {
+    var data = {};
+    data["foreground"] = true;
+    data["subTitle"] = subTitle;
+    data["showWhen"] = showWhen;
+    data["title"] = title;
+    data["description"] = description;
 
-  /// demoteToBackground TODO:
+    return await _bgMethodChannel
+        .invokeMethod('service.promoteToForeground', [jsonEncode(data)]);
+  }
+
+  /// demoteToBackground
   static Future<void> demoteToBackground() async =>
       await _bgMethodChannel.invokeMethod('service.demoteToBackground');
 

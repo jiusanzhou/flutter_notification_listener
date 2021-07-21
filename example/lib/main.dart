@@ -79,6 +79,10 @@ class _NotificationsLogState extends State<NotificationsLog> {
     setState(() {
       _log.add(event);
     });
+    if (!event.packageName.contains("example")) {
+      // TODO: fix bug
+      // NotificationsListener.promoteToForeground("");
+    }
     print(event.toString());
   }
 
@@ -97,7 +101,9 @@ class _NotificationsLogState extends State<NotificationsLog> {
     var isR = await NotificationsListener.isRunning;
 
     if (!isR) {
-      await NotificationsListener.startService();
+      await NotificationsListener.startService(
+          title: "Listener Running",
+          description: "Let's scrape the notifactions...");
     }
 
     setState(() {

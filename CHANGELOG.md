@@ -1,3 +1,7 @@
+## 1.0.7
+
+- feature: add foreground service 
+
 ## 1.0.6
 
 - fix: charseq cause excatpion

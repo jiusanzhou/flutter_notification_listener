@@ -27,7 +27,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
 
     // event stream channel
     EventChannel(binaryMessenger, EVENT_CHANNEL_NAME).setStreamHandler(this)
-      // method channel
+    // method channel
     MethodChannel(binaryMessenger, METHOD_CHANNEL_NAME).setMethodCallHandler(this)
 
     // TODO: remove those code
@@ -67,13 +67,14 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
     const val SHARED_PREFERENCES_KEY = "flutter_notification_cache"
 
     const val CALLBACK_DISPATCHER_HANDLE_KEY = "callback_dispatch_handler"
+    const val PROMOTE_SERVICE_ARGS_KEY = "promote_service_args"
     const val CALLBACK_HANDLE_KEY = "callback_handler"
 
     private val sNotificationCacheLock = Object()
 
     fun registerAfterReboot(context: Context) {
       synchronized(sNotificationCacheLock) {
-        startService(context)
+        internalStartService(context)
       }
     }
 
@@ -86,7 +87,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
         .apply()
     }
 
-    fun startService(context: Context): Boolean {
+    fun internalStartService(context: Context): Boolean {
       if (!NotificationsHandlerService.permissionGiven(context)) {
         return false
       }
@@ -95,7 +96,12 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       with(NotificationsHandlerService) {
         /* Start the notification service once permission has been given. */
         val listenerIntent = Intent(context, NotificationsHandlerService::class.java)
-        context.startService(listenerIntent)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          context.startForegroundService(listenerIntent)
+        } else {
+          context.startService(listenerIntent)
+        }
 
         // and try to toggle the service to trigger rebind
         disableServiceSettings(context)
@@ -103,6 +109,18 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       }
 
       return true
+    }
+
+    fun startService(context: Context, args: ArrayList<*>?): Boolean {
+      // to store the args
+      Log.d(TAG, "store the promote args ...")
+      val args = args!![0] as String
+      context.getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+        .edit()
+        .putString(PROMOTE_SERVICE_ARGS_KEY, args)
+        .apply()
+
+      return internalStartService(context)
     }
 
     fun stopService(context: Context): Boolean {
@@ -117,13 +135,18 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
 
     @Suppress("DEPRECATION")
     fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
+      return null != getRunningService(context, serviceClass)
+    }
+
+    private fun getRunningService(context: Context, serviceClass: Class<*>): ActivityManager.RunningServiceInfo? {
       val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
       for (service in manager!!.getRunningServices(Int.MAX_VALUE)) {
-        if (serviceClass.name.equals(service.service.className)) {
-          return true
+        if (serviceClass.name == service.service.className) {
+          return service
         }
       }
-      return false
+
+      return null
     }
 
     fun registerEventHandle(context: Context, args: ArrayList<*>?) {
@@ -143,7 +166,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
         return result.success(true)
       }
       "plugin.startService" -> {
-        return result.success(startService(mContext))
+        return result.success(startService(mContext, args))
       }
       "plugin.stopService" -> {
         return result.success(stopService(mContext))
