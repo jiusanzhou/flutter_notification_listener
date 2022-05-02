@@ -19,7 +19,7 @@ Flutter Plugin to listen to all incoming notifications for Android.
 
 - **Service**: start a foreground service to listen the notifications.
 - **Easy**: you can get the notifaction fields: `timestamp`, `title`, `message` and `package`.
-- **Backgrounded**: execute the dart code in the background.
+- **Backgrounded**: execute the dart code in the background and auto start the service after reboot.
 
 **Note:** If have any fields to add, feel free to pull request.
 
@@ -60,26 +60,53 @@ If you want to start the service after reboot, also should put the following cod
 </receiver>
 ```
 
-**2. Init the plugin and add listen handelr**
+And don't forget to add the permissions to the manifest,
+```xml
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<!-- this pemission is for auto start service after reboot -->
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+```
+
+**2. Init the plugin and add listen handler**
+
+We have a default static event handler which send event with a channel.
+So if you can listen the event in the ui logic simply.
 
 ```dart
+// define the handler for ui
 void onData(NotificationEvent event) {
     print(event.toString());
 }
 
 Future<void> initPlatformState() async {
     NotificationsListener.initialize();
+    // register you event handler in the ui logic.
     NotificationsListener.receivePort.listen((evt) => onData(evt));
+}
+```
 
-    // or you can register your static function
+> You should know that the function `(evt) => onData(evt)` would **not be called** if the ui thread is not running.
+
+**:warning: It's recommended that you should register your own static function `callbackHandle` to handle the event which make sure events consumed.**
+
+That means the `callbackHandle` static function is guaranteed, while the channel handle function is not. This is every useful when you should persist the events to the database.
+
+```dart
+Future<void> initPlatformState() async {
+    // register the static to handle the events
     NotificationsListener.initialize(callbackHandle: _callback);
 }
 
 static void _callback(NotificationEvent evt) {
     print("send evt to ui: $evt");
+    // try to send the event to ui
     final SendPort send = IsolateNameServer.lookupPortByName("_listener_");
     if (send == null) print("can't find the sender");
     send?.send(evt);
+
+    // persist data immediately
+    // db.save(evt)
 }
 ```
 
@@ -107,6 +134,10 @@ void startListening() async {
 ```
 
 Please check the [./example/lib/main.dart](./example/lib/main.dart) for more detail.
+
+### Issues
+
+- If the service is not foreground, service will start failed after reboot.
 
 ### APIs
 
