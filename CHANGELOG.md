@@ -1,3 +1,8 @@
+
+## 1.0.8
+
+- hotfix: fix start service failed after reboot
+
 ## 1.0.7
 
 - feature: add foreground service 
