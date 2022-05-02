@@ -1,5 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="im.zoe.labs.flutter_notification_listener_example">
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
    <application
         android:label="flutter_notification_listener_example"
         android:icon="@mipmap/ic_launcher"
@@ -39,9 +44,12 @@
             android:name="flutterEmbedding"
             android:value="2" />
        <receiver android:name="im.zoe.labs.flutter_notification_listener.RebootBroadcastReceiver"
-           android:enabled="true">
-           <intent-filter>
+           android:enabled="true" android:exported="true" android:label="RestartServiceWhenStopped">
+           <intent-filter android:directBootAware="true">
                <action android:name="android.intent.action.BOOT_COMPLETED" />
+               <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+               <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+               <action android:name="android.intent.action.REBOOT"/>
            </intent-filter>
        </receiver>
         <service android:name="im.zoe.labs.flutter_notification_listener.NotificationsHandlerService"
