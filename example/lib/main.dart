@@ -102,6 +102,7 @@ class _NotificationsLogState extends State<NotificationsLog> {
 
     if (!isR) {
       await NotificationsListener.startService(
+          foreground: true,
           title: "Listener Running",
           description: "Let's scrape the notifactions...");
     }

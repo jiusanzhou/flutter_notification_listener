@@ -24,7 +24,6 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.FlutterCallbackInformation
 import org.json.JSONObject
-import java.lang.Exception
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -82,12 +81,25 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
 
     override fun onCreate() {
         super.onCreate()
+        Log.i(TAG, "notification listener service onCreate")
         startListenerService(this)
 
         // create the notification
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             promoteToForeground(null)
         };
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.i(TAG, "notification listener service onDestroy")
+        val bdi = Intent(mContext, RebootBroadcastReceiver::class.java)
+        sendBroadcast(bdi)
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.i(TAG, "notification listener service onTaskRemoved")
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -283,7 +295,11 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
             // already started
             if (sBackgroundFlutterEngine == null) {
 
-                Log.d(TAG, "ok let's init")
+                Log.d(TAG, "flutter engine is null, let's create a new one")
+
+                // ensure initialization
+                FlutterInjector.instance().flutterLoader().startInitialization(context)
+                FlutterInjector.instance().flutterLoader().ensureInitializationComplete(context, arrayOf())
 
                 // start the bg flutter engine
                 val callbackDispatchHandle = context.getSharedPreferences(FlutterNotificationListenerPlugin.SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
@@ -294,6 +310,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
                     return
                 }
 
+                Log.d(TAG, "try to find callback: $callbackDispatchHandle")
                 val callbackInfo = FlutterCallbackInformation.lookupCallbackInformation(callbackDispatchHandle)
 
                 Log.i(TAG, "create flutter engine")
