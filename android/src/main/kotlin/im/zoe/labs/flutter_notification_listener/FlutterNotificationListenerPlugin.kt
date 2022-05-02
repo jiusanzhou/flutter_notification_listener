@@ -74,6 +74,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
 
     fun registerAfterReboot(context: Context) {
       synchronized(sNotificationCacheLock) {
+        Log.i(TAG, "try to start service after reboot")
         internalStartService(context)
       }
     }
@@ -89,11 +90,14 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
 
     fun internalStartService(context: Context): Boolean {
       if (!NotificationsHandlerService.permissionGiven(context)) {
+        Log.e(TAG, "can't get permission to start service.")
         return false
       }
 
       // and try to toggle the service to trigger rebind
       with(NotificationsHandlerService) {
+        Log.d(TAG, "start the notification handler service.")
+
         /* Start the notification service once permission has been given. */
         val listenerIntent = Intent(context, NotificationsHandlerService::class.java)
 
