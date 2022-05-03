@@ -1,3 +1,7 @@
+## 1.1.0
+
+- feature: add notification id
+- feature: add notification large icon
 
 ## 1.0.8
 

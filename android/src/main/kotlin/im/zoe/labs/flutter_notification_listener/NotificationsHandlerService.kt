@@ -87,7 +87,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
         // create the notification
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             promoteToForeground(null)
-        };
+        }
     }
 
     override fun onDestroy() {
@@ -108,7 +108,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
         FlutterInjector.instance().flutterLoader().startInitialization(mContext)
         FlutterInjector.instance().flutterLoader().ensureInitializationComplete(mContext, null)
 
-        val evt = NotificationEvent.fromSbn(sbn)
+        val evt = NotificationEvent.fromSbn(mContext, sbn)
 
         synchronized(sServiceStarted) {
             if (!sServiceStarted.get()) {
@@ -147,7 +147,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
         (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
             newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG).apply {
                 setReferenceCounted(false)
-                acquire()
+                acquire(10*60*1000L /*10 minutes*/)
             }
         }
 
