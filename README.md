@@ -8,9 +8,6 @@
 
 Flutter Plugin to listen to all incoming notifications for Android.
 
-> :warning: This plugin is Android only.
-
-
 </div>
 
 ---
@@ -18,10 +15,8 @@ Flutter Plugin to listen to all incoming notifications for Android.
 ### Features
 
 - **Service**: start a foreground service to listen the notifications.
-- **Easy**: you can get the notifaction fields: `timestamp`, `title`, `message` and `package`.
+- **Easy**: you can get the notifaction fields: `id`, `timestamp`, `title`, `message`, `largeIcon` and `package`.
 - **Backgrounded**: execute the dart code in the background and auto start the service after reboot.
-
-**Note:** If have any fields to add, feel free to pull request.
 
 ### Get Start
 
