@@ -1,3 +1,8 @@
+## 1.1.1
+
+- hotfix: fix utils class miss
+
+
 ## 1.1.0
 
 - feature: add notification id
