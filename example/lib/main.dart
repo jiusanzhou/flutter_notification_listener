@@ -142,7 +142,8 @@ class _NotificationsLogState extends State<NotificationsLog> {
                 final entry = _log[idx];
                 return ListTile(
                     trailing:
-                        Text(entry.packageName.toString().split('.').last),
+                        entry.hasLargeIcon ? Image.memory(entry.largeIcon) :
+                          Text(entry.packageName.toString().split('.').last),
                     title: Container(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
