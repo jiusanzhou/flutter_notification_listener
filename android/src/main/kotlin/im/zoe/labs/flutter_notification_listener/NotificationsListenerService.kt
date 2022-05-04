@@ -9,12 +9,16 @@ class NotificationsListenerService : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
 
-        val evt = NotificationEvent.fromSbn(applicationContext, sbn)
+        try {
+            val evt = NotificationEvent.fromSbn(applicationContext, sbn)
 
-        val intent = Intent(NOTIFICATION_INTENT)
-        intent.putExtra(NOTIFICATION_INTENT_KEY, evt.toString())
+            val intent = Intent(NOTIFICATION_INTENT)
+            intent.putExtra(NOTIFICATION_INTENT_KEY, evt.toString())
 
-        sendBroadcast(intent)
+            sendBroadcast(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
