@@ -339,8 +339,12 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
 
         // why mBackgroundChannel can be null?
 
-        // don't care about the method name
-        mBackgroundChannel.invokeMethod("sink_event", listOf(callbackHandle, evt))
+        try {
+            // don't care about the method name
+            mBackgroundChannel.invokeMethod("sink_event", listOf(callbackHandle, evt))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
 }
