@@ -7,6 +7,7 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import androidx.annotation.RequiresApi
 import im.zoe.labs.flutter_notification_listener.Utils.Companion.toBitmap
 import java.io.ByteArrayOutputStream
@@ -17,6 +18,8 @@ class NotificationEvent {
         private const val NOTIFICATION_PACKAGE_NAME = "package_name"
         private const val NOTIFICATION_TIMESTAMP = "timestamp"
         private const val NOTIFICATION_ID = "id"
+        private const val NOTIFICATION_UID = "uid"
+        private const val NOTIFICATION_INTENT = "intent"
 
         /**
         private const val NOTIFICATION_MESSAGE = "message"
@@ -38,6 +41,10 @@ class NotificationEvent {
             map[NOTIFICATION_TIMESTAMP] = sbn.postTime
             map[NOTIFICATION_PACKAGE_NAME] =  sbn.packageName
             map[NOTIFICATION_ID] = sbn.id
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                map[NOTIFICATION_UID] = sbn.uid
+            }
 
             // map[NOTIFICATION_OBJECT] = getNotifyInfo(notify)
 
