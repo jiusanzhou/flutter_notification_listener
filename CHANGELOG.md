@@ -1,3 +1,7 @@
+## 1.1.3
+
+- fix: add try catch while invoke method
+
 ## 1.1.2
 
 - hotfix: fix exception of some app send bitmap as large icon
