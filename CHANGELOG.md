@@ -1,3 +1,7 @@
+## 1.1.2
+
+- hotfix: fix exception of some app send bitmap as large icon
+
 ## 1.1.1
 
 - hotfix: fix utils class miss
