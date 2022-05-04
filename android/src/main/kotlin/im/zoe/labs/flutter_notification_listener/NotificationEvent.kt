@@ -53,8 +53,8 @@ class NotificationEvent {
             Notification.EXTRA_BIG_TEXT,
             Notification.EXTRA_INFO_TEXT,
             Notification.EXTRA_SHOW_WHEN,
-            Notification.EXTRA_LARGE_ICON,
-            Notification.EXTRA_LARGE_ICON_BIG
+            Notification.EXTRA_LARGE_ICON
+            // Notification.EXTRA_LARGE_ICON_BIG
         )
 
         private fun turnExtraToMap(context: Context, extras: Bundle?): HashMap<String, Any?> {
@@ -91,6 +91,7 @@ class NotificationEvent {
             return when (v) {
                 is CharSequence -> v.toString()
                 is Array<*> -> v.map { marshalled(context, it) }
+                is Bitmap -> convertBitmapToByteArray(v)
                 // TODO: turn other types which cause exception
                 else -> v
             }
@@ -98,9 +99,13 @@ class NotificationEvent {
 
         @RequiresApi(Build.VERSION_CODES.M)
         private fun convertIconToByteArray(context: Context, icon: Icon): ByteArray {
-             val stream = ByteArrayOutputStream()
-             icon.loadDrawable(context).toBitmap().compress(Bitmap.CompressFormat.PNG, 100, stream)
-             return stream.toByteArray()
+            return convertBitmapToByteArray(icon.loadDrawable(context).toBitmap())
+        }
+
+        private fun convertBitmapToByteArray(bitmap: Bitmap): ByteArray {
+            val stream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            return stream.toByteArray()
         }
 
         @Suppress("DEPRECATION")
