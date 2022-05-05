@@ -1,10 +1,95 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter_notification_listener/flutter_notification_listener.dart';
+
+/// ActionInput is the remote inputs for action
+class ActionInput {
+  String? label;
+  String? resultKey;
+
+  ActionInput({
+    this.label,
+    this.resultKey,
+  });
+
+  factory ActionInput.fromMap(Map<dynamic, dynamic> map) {
+    return ActionInput(
+      label: map["label"],
+      resultKey: map["key"],
+    );
+  }
+}
+
+/// Action is the action for notification
+class Action {
+  String? title;
+  int? id;
+  int? semantic;
+  List<ActionInput>? inputs;
+
+  /// store the notifaction event
+  NotificationEvent? _evt;
+
+  Action(this._evt, {
+    this.title,
+    this.id,
+    this.inputs,
+    this.semantic,
+  });
+
+  /// create Action from map
+  factory Action.fromMap(NotificationEvent? evt, Map<dynamic, dynamic> map) {
+    return Action(
+      evt,
+      title: map["title"],
+      id: map["id"],
+      semantic: map["semantic"],
+      inputs: ((map["inputs"] ?? []) as List<dynamic>).map((e) => ActionInput.fromMap(e)).toList(),
+    );
+  }
+
+  Future<bool> tap() async {
+    if (_evt == null) throw Exception("The notification is null");
+    return NotificationsListener.tapNotificationAction(
+      _evt!.packageName!,
+      _evt!.id!,
+      id!,
+    );
+  }
+
+  Future<bool> postInputs(Map<String, dynamic> map) async {
+    if (_evt == null) throw Exception("The notification is null");
+    if (inputs == null || inputs!.length == 0) throw Exception("No inputs were provided");
+
+    // check if we have set the data
+    var hasData = false;
+    for (var input in inputs!) {
+      if (map[input.resultKey] != null) {
+        hasData = true;
+        break;
+      }
+    }
+    if (!hasData) {
+      throw Exception("You must offer data with resultKey from inputs");
+    }
+
+    return NotificationsListener.postActionInputs(
+      _evt!.packageName!,
+      _evt!.id!,
+      id!,
+      map,
+    );
+  }
+}
+
 /// NotificationEvent is the object converted from notification
 /// Notification anatomy:
 ///   https://developer.android.com/guide/topics/ui/notifiers/notifications
 class NotificationEvent {
+  /// the notification uid
+  int? uid;
+
   /// the notification id
   int? id;
 
@@ -49,11 +134,18 @@ class NotificationEvent {
   /// ```
   Uint8List? largeIcon;
 
+  /// if this notification can be tapped
+  bool? canTap;
+
+  /// actions of notification
+  List<Action>? actions;
+
   /// the raw notifaction data from android
   dynamic _data;
 
   NotificationEvent({
     this.id,
+    this.uid,
     this.createAt,
     this.packageName,
     this.title,
@@ -63,6 +155,7 @@ class NotificationEvent {
     // this.icon,
     this.hasLargeIcon,
     this.largeIcon,
+    this.canTap,
   });
 
   Map<dynamic, dynamic>? get raw => _data;
@@ -70,9 +163,10 @@ class NotificationEvent {
   /// Create the event from a map
   factory NotificationEvent.fromMap(Map<dynamic, dynamic> map) {
     map['hasLargeIcon'] = map['largeIcon'] != null && (map['largeIcon'] as Uint8List).isNotEmpty;
-    return NotificationEvent(
+    var evt = NotificationEvent(
         createAt: DateTime.now(),
         id: map['id'],
+        uid: map['uid'],
         packageName: map['package_name'],
         title: map['title'],
         text: map['text'],
@@ -81,8 +175,16 @@ class NotificationEvent {
         // icon: map['icon'],
         hasLargeIcon: map['hasLargeIcon'],
         largeIcon: map['largeIcon'],
-    )
-      .._data = map;
+        canTap: map["canTap"],
+    );
+  
+    // set the raw data
+    evt._data = map;
+
+    // create the actions from map
+    evt.actions = ((map["actions"] ?? []) as List<dynamic>).map((e) => Action.fromMap(evt, e)).toList();
+
+    return evt;
   }
 
   @override
@@ -91,6 +193,12 @@ class NotificationEvent {
       ..remove('icon')
       ..remove('largeIcon');
     return json.encode(tmp).toString();
+  }
+
+  /// tap the notification return false if not exits
+  Future<bool> tap() {
+    if (canTap == null || canTap == false) throw Exception("The notification can not be tapped");
+    return NotificationsListener.tapNotification(packageName!, id!);
   }
 }
 

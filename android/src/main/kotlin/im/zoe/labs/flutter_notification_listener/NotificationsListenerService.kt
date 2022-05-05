@@ -3,6 +3,7 @@ package im.zoe.labs.flutter_notification_listener
 import android.content.Intent
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 
 class NotificationsListenerService : NotificationListenerService() {
 
@@ -13,6 +14,8 @@ class NotificationsListenerService : NotificationListenerService() {
 
         val intent = Intent(NOTIFICATION_INTENT)
         intent.putExtra(NOTIFICATION_INTENT_KEY, evt.toString())
+
+        Log.d("NotificationsService2", evt.toString())
 
         sendBroadcast(intent)
     }
