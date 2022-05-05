@@ -129,23 +129,26 @@ class NotificationsListener {
   /// tap the notification
   static Future<bool> tapNotification(String pkg, int id) async {
     return await _bgMethodChannel
-      .invokeMethod<bool>('service.tap', [pkg, id]) ?? false;
+            .invokeMethod<bool>('service.tap', [pkg, id]) ??
+        false;
   }
 
   /// tap the notification action
   /// use the index to locate the action
-  static Future<bool> tapNotificationAction(String pkg, int id, int actionId) async {
+  static Future<bool> tapNotificationAction(
+      String pkg, int id, int actionId) async {
     return await _bgMethodChannel
-      .invokeMethod<bool>('service.tap_action', [pkg, id, actionId])
-        ?? false;
+            .invokeMethod<bool>('service.tap_action', [pkg, id, actionId]) ??
+        false;
   }
 
   /// set content for action's input
   /// this is useful while auto reply by notification
-  static Future<bool> postActionInputs(String pkg, int id,
-    int actionId, Map<String, dynamic> map) async {
-      return await _bgMethodChannel
-        .invokeMethod<bool>("service.send_input", [pkg, id, actionId, map]) ?? false;
+  static Future<bool> postActionInputs(
+      String pkg, int id, int actionId, Map<String, dynamic> map) async {
+    return await _bgMethodChannel.invokeMethod<bool>(
+            "service.send_input", [pkg, id, actionId, map]) ??
+        false;
   }
 
   static void _defaultCallbackHandle(NotificationEvent evt) {
@@ -158,7 +161,7 @@ class NotificationsListener {
 }
 
 /// callbackDispatcher use to install background channel
-void callbackDispatcher({ inited: true }) {
+void callbackDispatcher({inited: true}) {
   WidgetsFlutterBinding.ensureInitialized();
 
   NotificationsListener._bgMethodChannel
@@ -192,5 +195,6 @@ void callbackDispatcher({ inited: true }) {
   });
 
   // if start the ui first, this will cause method not found error
-  if(inited) NotificationsListener._bgMethodChannel.invokeMethod('service.initialized');
+  if (inited)
+    NotificationsListener._bgMethodChannel.invokeMethod('service.initialized');
 }

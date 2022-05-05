@@ -31,7 +31,8 @@ class Action {
   /// store the notifaction event
   NotificationEvent? _evt;
 
-  Action(this._evt, {
+  Action(
+    this._evt, {
     this.title,
     this.id,
     this.inputs,
@@ -45,7 +46,9 @@ class Action {
       title: map["title"],
       id: map["id"],
       semantic: map["semantic"],
-      inputs: ((map["inputs"] ?? []) as List<dynamic>).map((e) => ActionInput.fromMap(e)).toList(),
+      inputs: ((map["inputs"] ?? []) as List<dynamic>)
+          .map((e) => ActionInput.fromMap(e))
+          .toList(),
     );
   }
 
@@ -60,7 +63,8 @@ class Action {
 
   Future<bool> postInputs(Map<String, dynamic> map) async {
     if (_evt == null) throw Exception("The notification is null");
-    if (inputs == null || inputs!.length == 0) throw Exception("No inputs were provided");
+    if (inputs == null || inputs!.length == 0)
+      throw Exception("No inputs were provided");
 
     // check if we have set the data
     var hasData = false;
@@ -111,12 +115,12 @@ class NotificationEvent {
   /// DEPRECATE
   String? message;
 
-  /// icon of the notification which setted by setSmallIcon, 
+  /// icon of the notification which setted by setSmallIcon,
   /// at most time this is icon of the application package.
   /// So no need to set this, use a method to take from android.
   /// To display as a image use the Image.memory widget.
   /// Example:
-  /// 
+  ///
   /// ```
   /// Image.memory(evt.icon)
   /// ```
@@ -124,11 +128,11 @@ class NotificationEvent {
 
   /// if we have the large icon
   bool? hasLargeIcon;
-  
+
   /// large icon of the notification which setted by setLargeIcon.
   /// To display as a image use the Image.memory widget.
   /// Example:
-  /// 
+  ///
   /// ```
   /// Image.memory(evt.largeIcon)
   /// ```
@@ -162,27 +166,30 @@ class NotificationEvent {
 
   /// Create the event from a map
   factory NotificationEvent.fromMap(Map<dynamic, dynamic> map) {
-    map['hasLargeIcon'] = map['largeIcon'] != null && (map['largeIcon'] as Uint8List).isNotEmpty;
+    map['hasLargeIcon'] =
+        map['largeIcon'] != null && (map['largeIcon'] as Uint8List).isNotEmpty;
     var evt = NotificationEvent(
-        createAt: DateTime.now(),
-        id: map['id'],
-        uid: map['uid'],
-        packageName: map['package_name'],
-        title: map['title'],
-        text: map['text'],
-        message: map["message"],
-        timestamp: map["timestamp"],
-        // icon: map['icon'],
-        hasLargeIcon: map['hasLargeIcon'],
-        largeIcon: map['largeIcon'],
-        canTap: map["canTap"],
+      createAt: DateTime.now(),
+      id: map['id'],
+      uid: map['uid'],
+      packageName: map['package_name'],
+      title: map['title'],
+      text: map['text'],
+      message: map["message"],
+      timestamp: map["timestamp"],
+      // icon: map['icon'],
+      hasLargeIcon: map['hasLargeIcon'],
+      largeIcon: map['largeIcon'],
+      canTap: map["canTap"],
     );
-  
+
     // set the raw data
     evt._data = map;
 
     // create the actions from map
-    evt.actions = ((map["actions"] ?? []) as List<dynamic>).map((e) => Action.fromMap(evt, e)).toList();
+    evt.actions = ((map["actions"] ?? []) as List<dynamic>)
+        .map((e) => Action.fromMap(evt, e))
+        .toList();
 
     return evt;
   }
@@ -197,7 +204,8 @@ class NotificationEvent {
 
   /// tap the notification return false if not exits
   Future<bool> tap() {
-    if (canTap == null || canTap == false) throw Exception("The notification can not be tapped");
+    if (canTap == null || canTap == false)
+      throw Exception("The notification can not be tapped");
     return NotificationsListener.tapNotification(packageName!, id!);
   }
 }

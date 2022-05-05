@@ -153,21 +153,22 @@ class _NotificationsLogState extends State<NotificationsLog> {
                           Row(
                             children: entry.actions.map((act) {
                               return TextButton(
-                                onPressed: () {
-                                  // semantic is 1 means reply quick
-                                  if (act.semantic == 1) {
-                                    Map<String, dynamic> map = {};
-                                    act.inputs.forEach((e) {
-                                      print("set inputs: ${e.label}<${e.resultKey}>");
-                                      map[e.resultKey] = "Auto reply from me";
-                                    });
-                                    act.postInputs(map);
-                                  } else {
-                                    // just tap
-                                    act.tap();
-                                  }
-                                },
-                                child: Text(act.title));
+                                  onPressed: () {
+                                    // semantic is 1 means reply quick
+                                    if (act.semantic == 1) {
+                                      Map<String, dynamic> map = {};
+                                      act.inputs.forEach((e) {
+                                        print(
+                                            "set inputs: ${e.label}<${e.resultKey}>");
+                                        map[e.resultKey] = "Auto reply from me";
+                                      });
+                                      act.postInputs(map);
+                                    } else {
+                                      // just tap
+                                      act.tap();
+                                    }
+                                  },
+                                  child: Text(act.title));
                             }).toList(),
                           ),
                           Text(entry.createAt.toString().substring(0, 19)),
