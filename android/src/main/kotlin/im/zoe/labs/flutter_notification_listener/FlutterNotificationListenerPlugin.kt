@@ -6,6 +6,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
+import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -29,6 +30,10 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
     EventChannel(binaryMessenger, EVENT_CHANNEL_NAME).setStreamHandler(this)
     // method channel
     MethodChannel(binaryMessenger, METHOD_CHANNEL_NAME).setMethodCallHandler(this)
+
+    // store the flutter engine
+    val engine = flutterPluginBinding.flutterEngine
+    FlutterEngineCache.getInstance().put(FLUTTER_ENGINE_CACHE_KEY, engine)
 
     // TODO: remove those code
     val receiver = NotificationReceiver()
@@ -70,6 +75,8 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
     const val PROMOTE_SERVICE_ARGS_KEY = "promote_service_args"
     const val CALLBACK_HANDLE_KEY = "callback_handler"
 
+    const val FLUTTER_ENGINE_CACHE_KEY = "flutter_engine_main"
+
     private val sNotificationCacheLock = Object()
 
     fun registerAfterReboot(context: Context) {
@@ -80,12 +87,16 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
     }
 
     private fun initialize(context: Context, args: ArrayList<*>?) {
-      Log.d(TAG, "install callback dispatch ...")
+      Log.d(TAG, "plugin init: install callback and notify the service flutter engine changed")
       val callbackHandle = args!![0] as Long
       context.getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
         .edit()
         .putLong(CALLBACK_DISPATCHER_HANDLE_KEY, callbackHandle)
         .apply()
+
+      // TODO: update the flutter engine
+      // call the service to update the flutter engine
+      NotificationsHandlerService.updateFlutterEngine(context)
     }
 
     fun internalStartService(context: Context): Boolean {
