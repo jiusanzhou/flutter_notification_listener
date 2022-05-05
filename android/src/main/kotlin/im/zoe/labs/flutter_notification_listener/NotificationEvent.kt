@@ -17,6 +17,7 @@ class NotificationEvent {
         private const val NOTIFICATION_PACKAGE_NAME = "package_name"
         private const val NOTIFICATION_TIMESTAMP = "timestamp"
         private const val NOTIFICATION_ID = "id"
+        private const val NOTIFICATION_CHANNEL_ID = "channelId"
 
         /**
         private const val NOTIFICATION_MESSAGE = "message"
@@ -39,7 +40,10 @@ class NotificationEvent {
             map[NOTIFICATION_PACKAGE_NAME] =  sbn.packageName
             map[NOTIFICATION_ID] = sbn.id
 
-            // map[NOTIFICATION_OBJECT] = getNotifyInfo(notify)
+            // add channel id
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                map[NOTIFICATION_CHANNEL_ID] = notify.channelId
+            }
 
             return map
         }
