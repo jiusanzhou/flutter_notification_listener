@@ -14,14 +14,14 @@ Flutter plugin to listen for all incoming notifications for Android.
 
 ---
 
-### Features
+## Features
 
 - **Service**: start a service to listen the notifications.
 - **Simple**: it's simple to access notification's fields.
 - **Backgrounded**: execute the dart code in the background and auto start the service after reboot.
 - **Interactive**: the notification is interactive in flutter.
 
-### Installtion
+## Installtion
 
 Open the `pubspec.yaml` file located inside the app folder, and add css_colors: under `dependencies`.
 ```yaml
@@ -37,7 +37,7 @@ Then you should install it,
 - From Android Studio/IntelliJ: Click Packages get in the action ribbon at the top of `pubspec.yaml`.
 - From VS Code: Click Get Packages located in right side of the action ribbon at the top of `pubspec.yaml`.
 
-### Quick Start
+## Quick Start
 
 **1. Register the service in the manifest**
 
@@ -116,7 +116,7 @@ void startListening() async {
 
 Please check the [./example/lib/main.dart](./example/lib/main.dart) for more detail.
 
-### Usage
+## Usage
 
 ### Start the service after reboot
 
@@ -181,7 +181,7 @@ We want to run some code in background without UI thread, like persist the notif
     }
     ```
 
-#### Change notification of listening service
+### Change notification of listening service
 
 Before you start the listening service, you can offer some parameters.
 ```dart
@@ -192,7 +192,7 @@ await NotificationsListener.startService({
 });
 ```
 
-#### Tap the notification
+### Tap the notification
 
 We can tap the notification if it can be triggered in the flutter side.
 
@@ -209,7 +209,7 @@ void onData(NotificationEvent event) {
 }
 ```
 
-#### Tap action of the notification
+### Tap action of the notification
 
 The notifications from some applications will setted the actions.
 We can interact with the notificaions in the flutter side.
@@ -230,7 +230,7 @@ void onData(NotificationEvent event) {
 }
 ```
 
-#### Reply to conversation of the notification
+### Reply to conversation of the notification
 
 Android provider a quick replying method in the notification.
 So we can use this to implement a reply logic in the flutter.
@@ -258,9 +258,9 @@ void onData(NotificationEvent event) {
 }
 ```
 
-### API Reference
+## API Reference
 
-#### Object `NotificationEvent`
+### Object `NotificationEvent`
 
 Fields of `NotificationEvent`:
 - `uniqueId`: `String`, unique id of the notification which generated from `key`.
@@ -287,7 +287,7 @@ Other original fields in `raw` which not assgin to the class:
 Methods for notification:
 - `Future<bool> tap()`: tap the notification if it can be triggered, you should check `canTap` first. Normally will clean up the notification.
 
-#### Object `Action`
+### Object `Action`
 
 Fields of `Action`:
 - `id`: `int`, the index of the action in the actions array
@@ -317,14 +317,14 @@ Methods of `Action`:
 - `Future<bool> tap()`: tap the action of the notification. If action's semantic code is `1`, it can't be tapped.
 - `Future<bool> postInputs(Map<String, dynamic> map)`: post inputs to the notification, useful for replying automaticly. Only works when semantic code  is `1`.
 
-#### Object `ActionInput`
+### Object `ActionInput`
 
 Fields of `ActionInput`:
 - `label`: `String`, label for input.
 - `resultKey`: `String`, result key for input. Must use correct to post data to inputs.
 
 
-#### Class `NotificationsListener`
+### Class `NotificationsListener`
 
 Fields of `NotificationsListener`:
 - `isRunning`: `bool`, check if the listener service is running.
@@ -345,14 +345,14 @@ Static methods of `NotificationsListener`:
 - `Future<void> promoteToForeground({...})` proomte the service to the foreground. *Arguments are same `startService`*.
 - `Future<void> demoteToBackground()`: demote the service to background.
 
-### Known Issues
+## Known Issues
 
 - If the service is not foreground, service will start failed after reboot.
 
-### Support
+## Support
 
 Did you find this plugin useful? Please consider to make a donation to help improve it!
 
-### Contributing
+## Contributing
 
 Contributions are always welcome!
