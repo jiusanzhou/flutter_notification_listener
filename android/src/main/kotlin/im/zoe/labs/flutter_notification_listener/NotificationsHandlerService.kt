@@ -488,7 +488,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
 
         try {
             // don't care about the method name
-            mBackgroundChannel.invokeMethod("sink_event", listOf(callbackHandle, evt))
+            mBackgroundChannel.invokeMethod("sink_event", listOf(callbackHandle, evt.data))
         } catch (e: Exception) {
             e.printStackTrace()
         }
