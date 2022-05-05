@@ -21,6 +21,8 @@ class NotificationsListener {
   static const MethodChannel _bgMethodChannel =
       const MethodChannel('$CHANNELID/bg_method');
 
+  static MethodChannel get bgMethodChannel => _bgMethodChannel;
+
   static ReceivePort? _receivePort;
 
   /// Get a defualt receivePort
@@ -54,6 +56,10 @@ class NotificationsListener {
     await _methodChannel.invokeMethod(
         'plugin.initialize', <dynamic>[_callbackDispatch.toRawHandle()]);
 
+    // call this call back in the current engine
+    // this is important to use ui flutter engine access `service.channel`
+    callbackDispatcher(inited: false);
+
     // register event handler
     // register the default event handler
     await registerEventHandle(callbackHandle);
@@ -72,7 +78,7 @@ class NotificationsListener {
     return await _methodChannel.invokeMethod('plugin.isServiceRunning');
   }
 
-  /// Start the service
+  /// start the service
   static Future<bool?> startService({
     bool foreground = true,
     String subTitle = "",
@@ -87,16 +93,18 @@ class NotificationsListener {
     data["title"] = title;
     data["description"] = description;
 
-    return await _methodChannel
+    var res = await _methodChannel
         .invokeMethod('plugin.startService', [jsonEncode(data)]);
+
+    return res;
   }
 
-  /// Stop the service
+  /// stop the service
   static Future<bool?> stopService() async {
     return await _methodChannel.invokeMethod('plugin.stopService');
   }
 
-  /// promoteToForeground
+  /// promote the service to foreground
   static Future<void> promoteToForeground(
     String title, {
     String subTitle = "",
@@ -114,9 +122,32 @@ class NotificationsListener {
         .invokeMethod('service.promoteToForeground', [jsonEncode(data)]);
   }
 
-  /// demoteToBackground
+  /// demote the service to background
   static Future<void> demoteToBackground() async =>
       await _bgMethodChannel.invokeMethod('service.demoteToBackground');
+
+  /// tap the notification
+  static Future<bool> tapNotification(String uid) async {
+    return await _bgMethodChannel.invokeMethod<bool>('service.tap', [uid]) ??
+        false;
+  }
+
+  /// tap the notification action
+  /// use the index to locate the action
+  static Future<bool> tapNotificationAction(String uid, int actionId) async {
+    return await _bgMethodChannel
+            .invokeMethod<bool>('service.tap_action', [uid, actionId]) ??
+        false;
+  }
+
+  /// set content for action's input
+  /// this is useful while auto reply by notification
+  static Future<bool> postActionInputs(
+      String uid, int actionId, Map<String, dynamic> map) async {
+    return await _bgMethodChannel
+            .invokeMethod<bool>("service.send_input", [uid, actionId, map]) ??
+        false;
+  }
 
   static void _defaultCallbackHandle(NotificationEvent evt) {
     final SendPort? _send = IsolateNameServer.lookupPortByName(SEND_PORT_NAME);
@@ -128,7 +159,7 @@ class NotificationsListener {
 }
 
 /// callbackDispatcher use to install background channel
-void callbackDispatcher() {
+void callbackDispatcher({inited: true}) {
   WidgetsFlutterBinding.ensureInitialized();
 
   NotificationsListener._bgMethodChannel
@@ -161,5 +192,7 @@ void callbackDispatcher() {
     }
   });
 
-  NotificationsListener._bgMethodChannel.invokeMethod('service.initialized');
+  // if start the ui first, this will cause method not found error
+  if (inited)
+    NotificationsListener._bgMethodChannel.invokeMethod('service.initialized');
 }
