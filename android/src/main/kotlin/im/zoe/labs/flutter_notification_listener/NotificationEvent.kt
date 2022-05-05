@@ -1,39 +1,38 @@
 package im.zoe.labs.flutter_notification_listener
 
 import android.app.Notification
-import android.app.RemoteInput
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import android.service.notification.StatusBarNotification
-import android.util.Log
 import androidx.annotation.RequiresApi
 import im.zoe.labs.flutter_notification_listener.Utils.Companion.toBitmap
 import java.io.ByteArrayOutputStream
 
 class NotificationEvent(context: Context, sbn: StatusBarNotification) {
 
-    var mContext = context
     var mSbn = sbn
 
     var data: Map<String, Any?> = fromSbn(context, sbn)
 
-    val key: String
-        get() = "${genKey(data[NOTIFICATION_PACKAGE_NAME] as String, data[NOTIFICATION_ID] as Int)}"
+    val uid: String
+        get() = data[NOTIFICATION_UNIQUE_ID] as String
 
     companion object {
         private const val NOTIFICATION_PACKAGE_NAME = "package_name"
         private const val NOTIFICATION_TIMESTAMP = "timestamp"
         private const val NOTIFICATION_ID = "id"
         private const val NOTIFICATION_UID = "uid"
+        private const val NOTIFICATION_CHANNEL_ID = "channelId"
         private const val NOTIFICATION_ACTIONS = "actions"
         private const val NOTIFICATION_CAN_TAP = "canTap"
+        private const val NOTIFICATION_KEY = "key"
+        private const val NOTIFICATION_UNIQUE_ID = "_id"
 
-        fun genKey(pkg: String, id: Int): String {
-            return "$pkg-$id"
+        fun genKey(vararg items: Any?): String {
+            return Utils.md5(items.joinToString(separator="-"){ "$it" }).slice(IntRange(0, 12))
         }
 
         // https://developer.android.com/guide/topics/ui/notifiers/notifications
@@ -53,6 +52,22 @@ class NotificationEvent(context: Context, sbn: StatusBarNotification) {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 map[NOTIFICATION_UID] = sbn.uid
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                map[NOTIFICATION_CHANNEL_ID] = notify.channelId
+            }
+
+            // generate the unique id
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                map[NOTIFICATION_KEY] = sbn.key
+                map[NOTIFICATION_UNIQUE_ID] = genKey(sbn.key)
+            } else {
+                map[NOTIFICATION_UNIQUE_ID] = genKey(
+                    map[NOTIFICATION_PACKAGE_NAME],
+                    map[NOTIFICATION_CHANNEL_ID],
+                    map[NOTIFICATION_ID]
+                )
             }
 
             map[NOTIFICATION_CAN_TAP] = notify.contentIntent != null
@@ -130,7 +145,7 @@ class NotificationEvent(context: Context, sbn: StatusBarNotification) {
             if (n?.actions == null) return null
             var items: List<Map<String, Any>?> = mutableListOf()
             n.actions.forEachIndexed { idx, act ->
-                var map = HashMap<String, Any>()
+                val map = HashMap<String, Any>()
                 map["id"] = idx
                 map["title"] = act.title.toString()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -140,7 +155,7 @@ class NotificationEvent(context: Context, sbn: StatusBarNotification) {
                     var ins: List<Map<String, Any>?> = mutableListOf()
                     if (act.remoteInputs != null) {
                         act.remoteInputs.forEach {
-                            var input = HashMap<String, Any>()
+                            val input = HashMap<String, Any>()
                             input["label"] = it.label.toString()
                             input["key"] = it.resultKey
                             // input["choices"] = it.choices

@@ -127,27 +127,25 @@ class NotificationsListener {
       await _bgMethodChannel.invokeMethod('service.demoteToBackground');
 
   /// tap the notification
-  static Future<bool> tapNotification(String pkg, int id) async {
-    return await _bgMethodChannel
-            .invokeMethod<bool>('service.tap', [pkg, id]) ??
+  static Future<bool> tapNotification(String uid) async {
+    return await _bgMethodChannel.invokeMethod<bool>('service.tap', [uid]) ??
         false;
   }
 
   /// tap the notification action
   /// use the index to locate the action
-  static Future<bool> tapNotificationAction(
-      String pkg, int id, int actionId) async {
+  static Future<bool> tapNotificationAction(String uid, int actionId) async {
     return await _bgMethodChannel
-            .invokeMethod<bool>('service.tap_action', [pkg, id, actionId]) ??
+            .invokeMethod<bool>('service.tap_action', [uid, actionId]) ??
         false;
   }
 
   /// set content for action's input
   /// this is useful while auto reply by notification
   static Future<bool> postActionInputs(
-      String pkg, int id, int actionId, Map<String, dynamic> map) async {
-    return await _bgMethodChannel.invokeMethod<bool>(
-            "service.send_input", [pkg, id, actionId, map]) ??
+      String uid, int actionId, Map<String, dynamic> map) async {
+    return await _bgMethodChannel
+            .invokeMethod<bool>("service.send_input", [uid, actionId, map]) ??
         false;
   }
 

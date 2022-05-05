@@ -1,5 +1,6 @@
 package im.zoe.labs.flutter_notification_listener
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.RemoteInput
@@ -57,28 +58,25 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
               // tap the notification
               Log.d(TAG, "tap the notification")
               val args = call.arguments<ArrayList<*>>()
-              val pkg = args[0] as String
-              val id = args[1] as Int
-              return result.success(tapNotification(pkg, id))
+              val uid = args[0] as String
+              return result.success(tapNotification(uid))
           }
           "service.tap_action" -> {
               // tap the action
               Log.d(TAG, "tap action of notification")
               val args = call.arguments<ArrayList<*>>()
-              val pkg = args[0] as String
-              val id = args[1] as Int
-              val idx = args[2] as Int
-              return result.success(tapNotificationAction(pkg, id, idx))
+              val uid = args[0] as String
+              val idx = args[1] as Int
+              return result.success(tapNotificationAction(uid, idx))
           }
           "service.send_input" -> {
               // send the input data
               Log.d(TAG, "set the content for input and the send action")
               val args = call.arguments<ArrayList<*>>()
-              val pkg = args[0] as String
-              val id = args[1] as Int
-              val idx = args[2] as Int
-              val data = args[3] as Map<*, *>
-              return result.success(sendNotificationInput(pkg, id, idx, data))
+              val uid = args[0] as String
+              val idx = args[1] as Int
+              val data = args[2] as Map<*, *>
+              return result.success(sendNotificationInput(uid, idx, data))
           }
           else -> {
               Log.d(TAG, "unknown method ${call.method}")
@@ -144,7 +142,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
         val evt = NotificationEvent(mContext, sbn)
 
         // store the evt to cache
-        eventsCache[evt.key] = evt
+        eventsCache[evt.uid] = evt
 
         synchronized(sServiceStarted) {
             if (!sServiceStarted.get()) {
@@ -162,8 +160,8 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
         if (sbn == null) return
         val evt = NotificationEvent(mContext, sbn)
         // remove the event from cache
-        eventsCache.remove(evt.key)
-        Log.d(TAG, "notification removed: ${evt.key}")
+        eventsCache.remove(evt.uid)
+        Log.d(TAG, "notification removed: ${evt.uid}")
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -267,59 +265,66 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
         return true
     }
 
-    private fun tapNotification(pkg: String, id: Int): Boolean {
-        val key = NotificationEvent.genKey(pkg, id)
-        Log.d(TAG, "tap the notification: $key")
-        if (!eventsCache.containsKey(key)) {
-            Log.d(TAG, "notification is not exits: $key")
+    private fun tapNotification(uid: String): Boolean {
+        Log.d(TAG, "tap the notification: $uid")
+        if (!eventsCache.containsKey(uid)) {
+            Log.d(TAG, "notification is not exits: $uid")
             return false
         }
-        val n = eventsCache[key] ?: return false
+        val n = eventsCache[uid] ?: return false
         n.mSbn.notification.contentIntent.send()
         return true
     }
 
-    private fun tapNotificationAction(pkg: String, id: Int, idx: Int): Boolean {
-        val key = NotificationEvent.genKey(pkg, id)
-        Log.d(TAG, "tap the notification action: $key @$idx")
-        if (!eventsCache.containsKey(key)) {
-            Log.d(TAG, "notification is not exits: $key")
+    private fun tapNotificationAction(uid: String, idx: Int): Boolean {
+        Log.d(TAG, "tap the notification action: $uid @$idx")
+        if (!eventsCache.containsKey(uid)) {
+            Log.d(TAG, "notification is not exits: $uid")
             return false
         }
-        val n = eventsCache[key]
+        val n = eventsCache[uid]
         if (n == null) {
-            Log.e(TAG, "notification is null: $key")
+            Log.e(TAG, "notification is null: $uid")
             return false
         }
+        if (n.mSbn.notification.actions.size <= idx) {
+            Log.e(TAG, "tap action out of range: size ${n.mSbn.notification.actions.size} index $idx")
+            return false
+        }
+
         val act = n.mSbn.notification.actions[idx]
         if (act == null) {
-            Log.e(TAG, "notification $key action $idx not exits")
+            Log.e(TAG, "notification $uid action $idx not exits")
             return false
         }
         act.actionIntent.send()
         return true
     }
 
-    private fun sendNotificationInput(pkg: String, id: Int, idx: Int, data: Map<*, *>): Boolean {
-        val key = NotificationEvent.genKey(pkg, id)
-        Log.d(TAG, "tap the notification action: $key @$idx")
-        if (!eventsCache.containsKey(key)) {
-            Log.d(TAG, "notification is not exits: $key")
+    private fun sendNotificationInput(uid: String, idx: Int, data: Map<*, *>): Boolean {
+        Log.d(TAG, "tap the notification action: $uid @$idx")
+        if (!eventsCache.containsKey(uid)) {
+            Log.d(TAG, "notification is not exits: $uid")
             return false
         }
-        val n = eventsCache[key]
+        val n = eventsCache[uid]
         if (n == null) {
-            Log.e(TAG, "notification is null: $key")
+            Log.e(TAG, "notification is null: $uid")
             return false
         }
+        if (n.mSbn.notification.actions.size <= idx) {
+            Log.e(TAG, "send inputs out of range: size ${n.mSbn.notification.actions.size} index $idx")
+            return false
+        }
+
         val act = n.mSbn.notification.actions[idx]
         if (act == null) {
-            Log.e(TAG, "notification $key action $idx not exits")
+            Log.e(TAG, "notification $uid action $idx not exits")
             return false
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             if (act.remoteInputs == null) {
-                Log.e(TAG, "notification $key action $idx remote inputs not exits")
+                Log.e(TAG, "notification $uid action $idx remote inputs not exits")
                 return false
             }
 
@@ -345,6 +350,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
 
         var callbackHandle = 0L
 
+        @SuppressLint("StaticFieldLeak")
         @JvmStatic
         var instance: NotificationsHandlerService? = null
 
