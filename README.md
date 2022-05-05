@@ -263,8 +263,11 @@ void onData(NotificationEvent event) {
 #### Object `NotificationEvent`
 
 Fields of `NotificationEvent`:
+- `uniqueId`: `String`, unique id of the notification which generated from `key`.
+- `key`: `String`, key of the status bar notification, required android sdk >= 20.
 - `packageName`: `String`, package name of the application which notification posted by.
-- `uid`: `int`, uid of the notification, required android sdk > 26.
+- `uid`: `int`, uid of the notification, required android sdk >= 29.
+- `channelId`: `String` channel if of the notification, required android sdk >= 26.
 - `id`: `int`, id of the notification.
 - `createAt`: `DateTime`, created time of the notfication in the flutter side.
 - `timestamp`: `int`, post time of the notfication.
