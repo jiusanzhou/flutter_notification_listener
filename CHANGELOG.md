@@ -1,3 +1,9 @@
+## 1.2.0
+
+- feature: add unique id for notification
+- feature: support interactive notification
+- chore: add docs for readme
+
 ## 1.1.3
 
 - fix: add try catch while invoke method
