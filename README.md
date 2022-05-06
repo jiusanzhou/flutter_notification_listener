@@ -53,23 +53,10 @@ The plugin uses an Android system service to track notifications. To allow this 
 </service>
 ```
 
-If you want to start the service after reboot, also should put the following code.
-
-```xml
-<receiver android:name="im.zoe.labs.flutter_notification_listener.RebootBroadcastReceiver"
-    android:enabled="true">
-    <intent-filter>
-        <action android:name="android.intent.action.BOOT_COMPLETED" />
-    </intent-filter>
-</receiver>
-```
-
 And don't forget to add the permissions to the manifest,
 ```xml
 <uses-permission android:name="android.permission.WAKE_LOCK" />
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-<!-- this pemission is for auto start service after reboot -->
-<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 ```
 
 **2. Init the plugin and add listen handler**
@@ -133,6 +120,15 @@ Register a broadcast receiver in the `AndroidManifest.xml`,
 ```
 
 Then the listening service will start automatically when the system fired the `BOOT_COMPLETED` intent.
+
+
+And don't forget to add the permissions to the manifest,
+```xml
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<!-- this pemission is for auto start service after reboot -->
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+```
 
 ### Execute task without UI thread
 
@@ -286,6 +282,7 @@ Other original fields in `raw` which not assgin to the class:
 
 Methods for notification:
 - `Future<bool> tap()`: tap the notification if it can be triggered, you should check `canTap` first. Normally will clean up the notification.
+- `Future<dynamic> getFullNotification(String uid)`: get the full notification information from android.
 
 ### Object `Action`
 
