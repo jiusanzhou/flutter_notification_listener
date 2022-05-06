@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.app.Person
 import android.app.RemoteInput
 import android.content.IntentSender
+import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
@@ -59,18 +60,26 @@ class Utils {
             register<Boolean> { passConvertor(it) }
 
             // basic types
-            register<CharSequence> { it.toString() }
+            register<CharSequence> { it?.toString() }
 
             // collections type
             register<List<*>> { arrayConvertor(it as List<*>) }
             // register<Array<*>> { arrayConvertor(it as Array<*>) }
             register<Array<*>> { obj ->
-                val items = mutableSetOf<Any?>()
+                val items = mutableListOf<Any?>()
                 (obj as Array<*>).forEach {
                     items.add(marshal(it))
                 }
                 items
             }
+            /*
+            register<LinkedHashSet<*>> { obj ->
+                val items = mutableSetOf<Any?>()
+                (obj as LinkedHashSet<*>).forEach {
+                    items.add(marshal(it))
+                }
+                items
+            }*/
 
             // extends type
             register<StatusBarNotification> {
@@ -126,6 +135,7 @@ class Utils {
                     map["timeoutAfter"] = v.timeoutAfter
                 }
                 map["number"] = v.number
+                map["sound"] = v.sound?.toString()
                 map
             }
             register<PendingIntent> {
@@ -133,6 +143,29 @@ class Utils {
                 val map = HashMap<String, Any?>()
                 map["creatorPackage"] = v.creatorPackage
                 map["creatorUid"] = v.creatorUid
+                map
+            }
+            register<ApplicationInfo> {
+                val v = it as ApplicationInfo
+                val map = HashMap<String, Any?>()
+                map["name"] = v.name
+                map["processName"] = v.processName
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    map["category"] = v.category
+                }
+                map["dataDir"] = v.dataDir
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    map["deviceProtectedDataDir"] = v.deviceProtectedDataDir
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    map["appComponentFactory"] = v.appComponentFactory
+                }
+                map["manageSpaceActivityName"] = v.manageSpaceActivityName
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    map["deviceProtectedDataDir"] = v.deviceProtectedDataDir
+                }
+                map["publicSourceDir"] = v.publicSourceDir
+                map["sourceDir"] = v.sourceDir
                 map
             }
 
