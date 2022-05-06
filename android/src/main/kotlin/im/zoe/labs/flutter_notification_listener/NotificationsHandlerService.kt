@@ -78,6 +78,14 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
               val data = args[2] as Map<*, *>
               return result.success(sendNotificationInput(uid, idx, data))
           }
+          "service.get_full_notification" -> {
+              val args = call.arguments<ArrayList<*>>()
+              val uid = args[0] as String
+              if (!eventsCache.contains(uid)) {
+                  return result.error("notFound", "can't found this notification $uid", "")
+              }
+              return result.success(Utils.Marshaller.marshal(eventsCache[uid]?.mSbn))
+          }
           else -> {
               Log.d(TAG, "unknown method ${call.method}")
               result.notImplemented()

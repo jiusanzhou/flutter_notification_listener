@@ -149,6 +149,13 @@ class NotificationsListener {
         false;
   }
 
+  /// get the full notification from android
+  /// with the unqiue id
+  static Future<dynamic> getFullNotification(String uid) async {
+    return await _bgMethodChannel
+      .invokeMethod<dynamic>("service.get_full_notification", [uid]);
+  }
+
   static void _defaultCallbackHandle(NotificationEvent evt) {
     final SendPort? _send = IsolateNameServer.lookupPortByName(SEND_PORT_NAME);
     print("[default callback handler] [send isolate nameserver]");

@@ -222,6 +222,11 @@ class NotificationEvent {
       throw Exception("The notification can not be tapped");
     return NotificationsListener.tapNotification(uniqueId!);
   }
+
+  /// get full notification
+  Future<dynamic> getFull() {
+    return NotificationsListener.getFullNotification(uniqueId!);
+  }
 }
 
 /// newEvent package level function create event from map

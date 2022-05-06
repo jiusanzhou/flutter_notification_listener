@@ -169,7 +169,17 @@ class _NotificationsLogState extends State<NotificationsLog> {
                                     }
                                   },
                                   child: Text(act.title));
-                            }).toList(),
+                            }).toList()..add(TextButton(
+                              child: Text("Full"),
+                              onPressed: () async {
+                                try {
+                                  var data = await entry.getFull();
+                                  print("full notifaction: $data");
+                                } catch (e) {
+                                  print(e);
+                                }
+                              }
+                            )),
                           ),
                           Text(entry.createAt.toString().substring(0, 19)),
                         ],
