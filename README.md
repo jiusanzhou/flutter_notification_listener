@@ -282,7 +282,7 @@ Other original fields in `raw` which not assgin to the class:
 
 Methods for notification:
 - `Future<bool> tap()`: tap the notification if it can be triggered, you should check `canTap` first. Normally will clean up the notification.
-- `Future<dynamic> getFullNotification(String uid)`: get the full notification information from android.
+- `Future<dynamic> getFull()`: get the full notification object from android.
 
 ### Object `Action`
 
