@@ -1,3 +1,8 @@
+## 1.3.0
+
+- feature: support full notification information
+- chore: add funding support
+
 ## 1.2.0
 
 - feature: add unique id for notification
