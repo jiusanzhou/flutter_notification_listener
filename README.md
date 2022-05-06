@@ -23,7 +23,7 @@ Flutter plugin to listen for all incoming notifications for Android.
 
 ## Installtion
 
-Open the `pubspec.yaml` file located inside the app folder, and add css_colors: under `dependencies`.
+Open the `pubspec.yaml` file located inside the app folder, and add `flutter_notification_listener`: under `dependencies`.
 ```yaml
 dependencies:
   flutter_notification_listener: <latest_version>
