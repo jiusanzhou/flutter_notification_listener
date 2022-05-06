@@ -153,7 +153,7 @@ class NotificationsListener {
   /// with the unqiue id
   static Future<dynamic> getFullNotification(String uid) async {
     return await _bgMethodChannel
-      .invokeMethod<dynamic>("service.get_full_notification", [uid]);
+        .invokeMethod<dynamic>("service.get_full_notification", [uid]);
   }
 
   static void _defaultCallbackHandle(NotificationEvent evt) {
