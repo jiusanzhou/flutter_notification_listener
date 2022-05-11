@@ -283,7 +283,7 @@ class Utils {
     }
 
     class PromoteServiceConfig {
-        var foreground: Boolean? = true
+        var foreground: Boolean? = false
         var title: String? = "Flutter Notification Listener"
         var subTitle: String? =  null
         var description: String? = "Let's scraping the notifications ..."
@@ -331,11 +331,15 @@ class Utils {
                 val cfg = PromoteServiceConfig()
                 val map = JSONObject(str)
                 map.let { m ->
-                    m["foreground"].let { cfg.foreground = it as Boolean? }
-                    m["title"].let { cfg.title = it as String? }
-                    m["subTitle"].let { cfg.subTitle = it as String? }
-                    m["description"].let { cfg.description = it as String? }
-                    m["showWhen"].let { cfg.showWhen = it as Boolean? }
+                    try {
+                        m["foreground"].let { cfg.foreground = it as Boolean? }
+                        m["title"].let { cfg.title = it as String? }
+                        m["subTitle"].let { cfg.subTitle = it as String? }
+                        m["description"].let { cfg.description = it as String? }
+                        m["showWhen"].let { cfg.showWhen = it as Boolean? }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
                 return cfg
             }
