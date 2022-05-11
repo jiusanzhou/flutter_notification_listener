@@ -46,10 +46,13 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
               initFinish()
               return result.success(true)
           }
+          // this should move to plugin
           "service.promoteToForeground" -> {
               // add data
-              val args = call.arguments<ArrayList<*>>()
-              return result.success(promoteToForeground(args!![0]))
+              val cfg = Utils.PromoteServiceConfig.fromMap(call.arguments as Map<*, *>).apply {
+                  foreground = true
+              }
+              return result.success(promoteToForeground(cfg))
           }
           "service.demoteToBackground" -> {
               return result.success(demoteToBackground())
@@ -102,7 +105,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
                         if (isHeld) release()
                     }
                 }
-                Log.d(TAG, "stop notification handler service!")
+                Log.i(TAG, "stop notification handler service!")
                 disableServiceSettings(mContext)
                 stopForeground(true)
                 stopSelf()
@@ -117,22 +120,20 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
     override fun onCreate() {
         super.onCreate()
 
+        mContext = this
+
         // store the service instance
         instance = this
 
         Log.i(TAG, "notification listener service onCreate")
         startListenerService(this)
-
-        // create the notification
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            promoteToForeground(null)
-        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         Log.i(TAG, "notification listener service onDestroy")
         val bdi = Intent(mContext, RebootBroadcastReceiver::class.java)
+        // remove notification
         sendBroadcast(bdi)
     }
 
@@ -172,53 +173,6 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
         Log.d(TAG, "notification removed: ${evt.uid}")
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun sendNotification(
-        foreground: Boolean,
-        subTitle: String?, showWhen: Boolean,
-        title: String?, description: String?
-    ): Boolean {
-
-        // first is not running already, start at first
-        if (!FlutterNotificationListenerPlugin.isServiceRunning(mContext, this.javaClass)) {
-            FlutterNotificationListenerPlugin.internalStartService(mContext)
-            return false
-        }
-
-        if (!foreground) {
-            Log.d(TAG, "args:  don't promote the service to foreground")
-            return false
-        }
-
-        // take a wake lock
-        (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG).apply {
-                setReferenceCounted(false)
-                acquire(10*60*1000L /*10 minutes*/)
-            }
-        }
-
-        // send a notification
-        val channel = NotificationChannel(CHANNEL_ID, "Flutter Notifications Listener Plugin", NotificationManager.IMPORTANCE_HIGH)
-        val imageId = resources.getIdentifier("ic_launcher", "mipmap", packageName)
-
-        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText(description)
-            .setShowWhen(showWhen)
-            .setSubText(subTitle)
-            .setSmallIcon(imageId)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .build()
-
-        Log.d(TAG, "promote the service to foreground")
-        startForeground(ONGOING_NOTIFICATION_ID, notification)
-        return true
-    }
-
     private fun initFinish() {
         Log.d(TAG, "service's flutter engine initialize finished")
         synchronized(sServiceStarted) {
@@ -227,39 +181,54 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
         }
     }
 
-    private fun promoteToForeground(str: Any?): Boolean {
-        // get args from store or args
-        val argsStr = if (str != null) {
-            str as String
-        } else {
-            getSharedPreferences(FlutterNotificationListenerPlugin.SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
-                .getString(FlutterNotificationListenerPlugin.PROMOTE_SERVICE_ARGS_KEY, null)
+    private fun promoteToForeground(cfg: Utils.PromoteServiceConfig? = null): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            Log.e(TAG, "promoteToForeground need sdk >= 26")
+            return false
         }
 
-        var foreground = true
-        var subTitle: String? = null
-        var title = "Notifications Listener"
-        var description = "Service is running"
-        var showWhen = false
+        if (cfg?.foreground != true) {
+            Log.i(TAG, "no need to start foreground: ${cfg?.foreground}")
+            return false
+        }
 
-        if (argsStr!=null) {
-            try {
-                val args = JSONObject(argsStr)
-                foreground = args["foreground"] as Boolean
-                subTitle = args["subTitle"] as String
-                title = args["title"] as String
-                description = args["description"] as String
-                showWhen = args["showWhen"] as Boolean
-            } catch (e: Exception) {
-                Log.d(TAG, "parse the args error:", e)
+        // first is not running already, start at first
+        if (!FlutterNotificationListenerPlugin.isServiceRunning(mContext, this.javaClass)) {
+            Log.e(TAG, "service is not running")
+            return false
+        }
+
+        // get args from store or args
+        val cfg = cfg ?: Utils.PromoteServiceConfig.load(this)
+        // make the service to foreground
+
+        // take a wake lock
+        (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG).apply {
+                setReferenceCounted(false)
+                acquire()
             }
         }
 
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            sendNotification(foreground, subTitle, showWhen, title, description)
-        } else {
-            TODO("VERSION.SDK_INT < O")
-        }
+        // create a channel for notification
+        val channel = NotificationChannel(CHANNEL_ID, "Flutter Notifications Listener Plugin", NotificationManager.IMPORTANCE_HIGH)
+        val imageId = resources.getIdentifier("ic_launcher", "mipmap", packageName)
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(cfg.title)
+            .setContentText(cfg.description)
+            .setShowWhen(cfg.showWhen ?: false)
+            .setSubText(cfg.subTitle)
+            .setSmallIcon(imageId)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build()
+
+        Log.d(TAG, "promote the service to foreground")
+        startForeground(ONGOING_NOTIFICATION_ID, notification)
+
+        return true
     }
 
     private fun demoteToBackground(): Boolean {
@@ -365,7 +334,6 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
         @JvmStatic
         private val TAG = "NotificationsListenerService"
 
-        // private val JOB_ID = UUID.randomUUID().mostSignificantBits.toInt()
         private const val ONGOING_NOTIFICATION_ID = 100
         @JvmStatic
         private val WAKELOCK_TAG = "IsolateHolderService::WAKE_LOCK"
@@ -474,11 +442,11 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
     }
 
     private fun startListenerService(context: Context) {
-
-        Log.d(TAG, "on call start listener service")
-
+        Log.d(TAG, "start listener service")
         synchronized(sServiceStarted) {
-            mContext = context
+            // promote to foreground
+            // TODO: take from intent, currently just load form store
+            promoteToForeground(Utils.PromoteServiceConfig.load(context))
 
             // we should to update
             Log.d(TAG, "service's flutter engine is null, should update one")
@@ -486,9 +454,7 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
 
             sServiceStarted.set(true)
         }
-
-        Log.d(TAG, "service init finished")
-
+        Log.d(TAG, "service start finished")
     }
 
     private fun sendEvent(evt: NotificationEvent) {

@@ -9,8 +9,11 @@ import androidx.annotation.RequiresApi
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.JSONMessageCodec
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import org.json.JSONObject
+import java.nio.ByteBuffer
 import java.util.*
 
 
@@ -64,7 +67,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
   }
 
   companion object {
-    const val TAG = "NOTIFICATION_PLUGIN"
+    const val TAG = "ListenerPlugin"
 
     private const val EVENT_CHANNEL_NAME = "flutter_notification_listener/events"
     private const val METHOD_CHANNEL_NAME = "flutter_notification_listener/method"
@@ -82,16 +85,15 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
     fun registerAfterReboot(context: Context) {
       synchronized(sNotificationCacheLock) {
         Log.i(TAG, "try to start service after reboot")
-        internalStartService(context)
+        internalStartService(context, null)
       }
     }
 
-    private fun initialize(context: Context, args: ArrayList<*>?) {
+    private fun initialize(context: Context, cbId: Long) {
       Log.d(TAG, "plugin init: install callback and notify the service flutter engine changed")
-      val callbackHandle = args!![0] as Long
       context.getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
         .edit()
-        .putLong(CALLBACK_DISPATCHER_HANDLE_KEY, callbackHandle)
+        .putLong(CALLBACK_DISPATCHER_HANDLE_KEY, cbId)
         .apply()
 
       // TODO: update the flutter engine
@@ -99,23 +101,28 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       NotificationsHandlerService.updateFlutterEngine(context)
     }
 
-    fun internalStartService(context: Context): Boolean {
+    fun internalStartService(context: Context, cfg: Utils.PromoteServiceConfig?): Boolean {
       if (!NotificationsHandlerService.permissionGiven(context)) {
         Log.e(TAG, "can't get permission to start service.")
         return false
       }
 
+      Log.d(TAG, "start service with args: $cfg")
+
+      val cfg = cfg ?: Utils.PromoteServiceConfig.load(context)
+
       // and try to toggle the service to trigger rebind
       with(NotificationsHandlerService) {
-        Log.d(TAG, "start the notification handler service.")
 
         /* Start the notification service once permission has been given. */
-        val listenerIntent = Intent(context, NotificationsHandlerService::class.java)
+        val intent = Intent(context, NotificationsHandlerService::class.java)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-          context.startForegroundService(listenerIntent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && cfg.foreground == true) {
+          Log.i(TAG, "start service foreground")
+          context.startForegroundService(intent)
         } else {
-          context.startService(listenerIntent)
+          Log.i(TAG, "start service normal")
+          context.startService(intent)
         }
 
         // and try to toggle the service to trigger rebind
@@ -126,16 +133,10 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       return true
     }
 
-    fun startService(context: Context, args: ArrayList<*>?): Boolean {
-      // to store the args
-      Log.d(TAG, "store the promote args ...")
-      val args = args!![0] as String
-      context.getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
-        .edit()
-        .putString(PROMOTE_SERVICE_ARGS_KEY, args)
-        .apply()
-
-      return internalStartService(context)
+    fun startService(context: Context, cfg: Utils.PromoteServiceConfig): Boolean {
+      // store the config
+      cfg.save(context)
+      return internalStartService(context, cfg)
     }
 
     fun stopService(context: Context): Boolean {
@@ -144,11 +145,9 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       val intent = Intent(context, NotificationsHandlerService::class.java)
       intent.action = NotificationsHandlerService.ACTION_SHUTDOWN
       context.startService(intent)
-      // context.stopService(intent)
       return true
     }
 
-    @Suppress("DEPRECATION")
     fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
       return null != getRunningService(context, serviceClass)
     }
@@ -164,24 +163,25 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       return null
     }
 
-    fun registerEventHandle(context: Context, args: ArrayList<*>?) {
-      val callbackHandle = args!![0] as Long
+    fun registerEventHandle(context: Context, cbId: Long): Boolean {
       context.getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
         .edit()
-        .putLong(CALLBACK_HANDLE_KEY, callbackHandle)
+        .putLong(CALLBACK_HANDLE_KEY, cbId)
         .apply()
+      return true
     }
   }
 
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-    val args = call.arguments<ArrayList<*>>()
     when (call.method) {
       "plugin.initialize" -> {
-        initialize(mContext, args)
+        val cbId = call.arguments<Long>()
+        initialize(mContext, cbId)
         return result.success(true)
       }
       "plugin.startService" -> {
-        return result.success(startService(mContext, args))
+        val cfg = Utils.PromoteServiceConfig.fromMap(call.arguments as Map<*, *>)
+        return result.success(startService(mContext, cfg))
       }
       "plugin.stopService" -> {
         return result.success(stopService(mContext))
@@ -193,15 +193,11 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
         return result.success(NotificationsHandlerService.openPermissionSettings(mContext))
       }
       "plugin.isServiceRunning" -> {
-        return result.success(
-          isServiceRunning(
-            mContext,
-            NotificationsHandlerService::class.java
-          )
-        )
+        return result.success(isServiceRunning(mContext, NotificationsHandlerService::class.java))
       }
       "plugin.registerEventHandle" -> {
-        registerEventHandle(mContext, args)
+        val cbId = call.arguments<Long>()
+        registerEventHandle(mContext, cbId)
         return result.success(true)
       }
       // TODO: register handle with filter
