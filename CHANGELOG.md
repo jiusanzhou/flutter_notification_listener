@@ -1,3 +1,8 @@
+## 1.3.1
+
+- chore: imporve code style
+- bugfix: fix foreground when first started, #16
+
 ## 1.3.0
 
 - feature: support full notification information

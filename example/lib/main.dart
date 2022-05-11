@@ -99,7 +99,7 @@ class _NotificationsLogState extends State<NotificationsLog> {
 
     if (!isR) {
       await NotificationsListener.startService(
-          foreground: true,
+          foreground: false,
           title: "Listener Running",
           description: "Welcome to having me");
     }
