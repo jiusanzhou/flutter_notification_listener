@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.app.Person
 import android.app.RemoteInput
+import android.content.Context
 import android.content.IntentSender
 import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
@@ -15,8 +16,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.UserHandle
 import android.service.notification.StatusBarNotification
+import android.util.Log
+import io.flutter.plugin.common.JSONMessageCodec
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
+import java.nio.ByteBuffer
 import java.security.MessageDigest
 
 class Utils {
@@ -273,6 +278,77 @@ class Utils {
 
             inline fun <reified T> register(noinline fn: Convertor) {
                 return instance.register<T>(fn)
+            }
+        }
+    }
+
+    class PromoteServiceConfig {
+        var foreground: Boolean? = false
+        var title: String? = "Flutter Notification Listener"
+        var subTitle: String? =  null
+        var description: String? = "Let's scraping the notifications ..."
+        var showWhen: Boolean? = false
+
+        fun toMap(): Map<String, Any?> {
+            val map = HashMap<String, Any?>()
+            map["foreground"] = foreground
+            map["title"] = title
+            map["subTitle"] = subTitle
+            map["description"] = description
+            map["showWhen"] = showWhen
+            return map
+        }
+
+        override fun toString(): String {
+            return JSONObject(toMap()).toString()
+        }
+
+        fun save(context: Context) {
+            val str = toString()
+            Log.d(TAG, "save the promote config: $str")
+            context.getSharedPreferences(FlutterNotificationListenerPlugin.SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+                .edit()
+                .putString(FlutterNotificationListenerPlugin.PROMOTE_SERVICE_ARGS_KEY, str)
+                .apply()
+        }
+        
+        companion object {
+            val TAG = "PromoteConfig"
+            
+            fun fromMap(map: Map<*, *>?): PromoteServiceConfig {
+                val cfg = PromoteServiceConfig()
+                map?.let { m ->
+                    m["foreground"]?.let { cfg.foreground = it as Boolean? }
+                    m["title"]?.let { cfg.title = it as String? }
+                    m["subTitle"]?.let { cfg.subTitle = it as String? }
+                    m["description"]?.let { cfg.description = it as String? }
+                    m["showWhen"]?.let { cfg.showWhen = it as Boolean? }
+                }
+                return cfg
+            }
+
+            fun fromString(str: String = "{}"): PromoteServiceConfig {
+                val cfg = PromoteServiceConfig()
+                val map = JSONObject(str)
+                map.let { m ->
+                    try {
+                        m["foreground"].let { cfg.foreground = it as Boolean? }
+                        m["title"].let { cfg.title = it as String? }
+                        m["subTitle"].let { cfg.subTitle = it as String? }
+                        m["description"].let { cfg.description = it as String? }
+                        m["showWhen"].let { cfg.showWhen = it as Boolean? }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                return cfg
+            }
+            
+            fun load(context: Context): PromoteServiceConfig {
+                val str = context.getSharedPreferences(FlutterNotificationListenerPlugin.SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+                    .getString(FlutterNotificationListenerPlugin.PROMOTE_SERVICE_ARGS_KEY, "{}")
+                Log.d(TAG, "load the promote config: ${str.toString()}")
+                return fromString(str?:"{}")
             }
         }
     }

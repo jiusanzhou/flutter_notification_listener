@@ -99,9 +99,9 @@ class _NotificationsLogState extends State<NotificationsLog> {
 
     if (!isR) {
       await NotificationsListener.startService(
-          foreground: true,
+          foreground: false,
           title: "Listener Running",
-          description: "Let's scrape the notifactions...");
+          description: "Welcome to having me");
     }
 
     setState(() {
@@ -129,7 +129,14 @@ class _NotificationsLogState extends State<NotificationsLog> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notifications Listener Example'),
+        title: Text('Listener Example'),
+        actions: [
+          IconButton(
+              onPressed: () {
+                print("TODO:");
+              },
+              icon: Icon(Icons.settings))
+        ],
       ),
       body: Center(
           child: ListView.builder(

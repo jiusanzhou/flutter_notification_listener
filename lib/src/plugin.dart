@@ -54,7 +54,7 @@ class NotificationsListener {
     final CallbackHandle _callbackDispatch =
         PluginUtilities.getCallbackHandle(callbackDispatcher)!;
     await _methodChannel.invokeMethod(
-        'plugin.initialize', <dynamic>[_callbackDispatch.toRawHandle()]);
+        'plugin.initialize', _callbackDispatch.toRawHandle());
 
     // call this call back in the current engine
     // this is important to use ui flutter engine access `service.channel`
@@ -70,7 +70,7 @@ class NotificationsListener {
     final CallbackHandle _callback =
         PluginUtilities.getCallbackHandle(callback)!;
     await _methodChannel.invokeMethod(
-        'plugin.registerEventHandle', <dynamic>[_callback.toRawHandle()]);
+        'plugin.registerEventHandle', _callback.toRawHandle());
   }
 
   /// check the service running or not
@@ -93,8 +93,7 @@ class NotificationsListener {
     data["title"] = title;
     data["description"] = description;
 
-    var res = await _methodChannel
-        .invokeMethod('plugin.startService', [jsonEncode(data)]);
+    var res = await _methodChannel.invokeMethod('plugin.startService', data);
 
     return res;
   }
@@ -118,8 +117,8 @@ class NotificationsListener {
     data["title"] = title;
     data["description"] = description;
 
-    return await _bgMethodChannel
-        .invokeMethod('service.promoteToForeground', [jsonEncode(data)]);
+    return await _bgMethodChannel.invokeMethod(
+        'service.promoteToForeground', data);
   }
 
   /// demote the service to background
