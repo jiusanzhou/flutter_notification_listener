@@ -60,30 +60,30 @@ class NotificationsHandlerService: MethodChannel.MethodCallHandler, Notification
           "service.tap" -> {
               // tap the notification
               Log.d(TAG, "tap the notification")
-              val args = call.arguments<ArrayList<*>>()
-              val uid = args[0]!! as String
+              val args = call.arguments<ArrayList<*>?>()
+              val uid = args!![0]!! as String
               return result.success(tapNotification(uid))
           }
           "service.tap_action" -> {
               // tap the action
               Log.d(TAG, "tap action of notification")
-              val args = call.arguments<ArrayList<*>>()
-              val uid = args[0]!! as String
+              val args = call.arguments<ArrayList<*>?>()
+              val uid = args!![0]!! as String
               val idx = args[1]!! as Int
               return result.success(tapNotificationAction(uid, idx))
           }
           "service.send_input" -> {
               // send the input data
               Log.d(TAG, "set the content for input and the send action")
-              val args = call.arguments<ArrayList<*>>()
-              val uid = args[0]!! as String
+              val args = call.arguments<ArrayList<*>?>()
+              val uid = args!![0]!! as String
               val idx = args[1]!! as Int
               val data = args[2]!! as Map<*, *>
               return result.success(sendNotificationInput(uid, idx, data))
           }
           "service.get_full_notification" -> {
-              val args = call.arguments<ArrayList<*>>()
-              val uid = args[0]!! as String
+              val args = call.arguments<ArrayList<*>?>()
+              val uid = args!![0]!! as String
               if (!eventsCache.contains(uid)) {
                   return result.error("notFound", "can't found this notification $uid", "")
               }
