@@ -1,3 +1,7 @@
+## 1.3.2
+
+- bugfix: with some kotlin version build error (asserts-null)
+
 ## 1.3.1
 
 - chore: imporve code style
