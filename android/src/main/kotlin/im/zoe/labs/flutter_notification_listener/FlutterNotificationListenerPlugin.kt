@@ -175,7 +175,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {
       "plugin.initialize" -> {
-        val cbId = call.arguments<Long>()
+        val cbId = call.arguments<Long?>()!!
         initialize(mContext, cbId)
         return result.success(true)
       }
@@ -196,7 +196,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
         return result.success(isServiceRunning(mContext, NotificationsHandlerService::class.java))
       }
       "plugin.registerEventHandle" -> {
-        val cbId = call.arguments<Long>()
+        val cbId = call.arguments<Long?>()!!
         registerEventHandle(mContext, cbId)
         return result.success(true)
       }
