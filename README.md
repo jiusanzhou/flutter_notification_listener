@@ -5,7 +5,7 @@
 [![Version](https://img.shields.io/pub/v/flutter_notification_listener.svg)](https://pub.dartlang.org/packages/flutter_notification_listener)
 [![pub points](https://badges.bar/flutter_notification_listener/pub%20points)](https://pub.dev/packages/flutter_notification_listener/score)
 [![popularity](https://badges.bar/flutter_notification_listener/popularity)](https://pub.dev/packages/flutter_notification_listener/score)
-[![likes](https://badges.bar/flutter_notification_listener/likes)](https://pub.dev/packages/flutter_inappwebview/score)
+[![likes](https://badges.bar/flutter_notification_listener/likes)](https://pub.dev/packages/flutter_notification_listener/score)
 [![License](https://img.shields.io/badge/license-AL2-blue.svg)](https://github.com/jiusanzhou/flutter_notification_listener/blob/master/LICENSE)
 
 Flutter plugin to listen for all incoming notifications for Android.
