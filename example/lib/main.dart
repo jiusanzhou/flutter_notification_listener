@@ -50,7 +50,7 @@ class _NotificationsLogState extends State<NotificationsLog> {
   // we must use static method, to handle in background
   static void _callback(NotificationEvent evt) {
     print("send evt to ui: $evt");
-    final SendPort send = IsolateNameServer.lookupPortByName("_listener_");
+    final SendPort? send = IsolateNameServer.lookupPortByName("_listener_");
     if (send == null) print("can't find the sender");
     send?.send(evt);
   }
@@ -67,11 +67,11 @@ class _NotificationsLogState extends State<NotificationsLog> {
     // don't use the default receivePort
     // NotificationsListener.receivePort.listen((evt) => onData(evt));
 
-    var isR = await NotificationsListener.isRunning;
-    print("""Service is ${!isR ? "not " : ""}aleary running""");
+    var isRunning = (await NotificationsListener.isRunning) ?? false;
+    print("""Service is ${!isRunning ? "not " : ""}already running""");
 
     setState(() {
-      started = isR;
+      started = isRunning;
     });
   }
 
@@ -88,16 +88,16 @@ class _NotificationsLogState extends State<NotificationsLog> {
     setState(() {
       _loading = true;
     });
-    var hasPermission = await NotificationsListener.hasPermission;
+    var hasPermission = (await NotificationsListener.hasPermission) ?? false;
     if (!hasPermission) {
       print("no permission, so open settings");
       NotificationsListener.openPermissionSettings();
       return;
     }
 
-    var isR = await NotificationsListener.isRunning;
+    var isRunning = (await NotificationsListener.isRunning) ?? false;
 
-    if (!isR) {
+    if (!isRunning) {
       await NotificationsListener.startService(
           foreground: false,
           title: "Listener Running",
@@ -158,16 +158,17 @@ class _NotificationsLogState extends State<NotificationsLog> {
                           Text(entry.title ?? "<<no title>>"),
                           Text(entry.text ?? "<<no text>>"),
                           Row(
-                            children: entry.actions.map((act) {
+                            children: (entry.actions ?? []).map((act) {
                               return TextButton(
                                   onPressed: () {
                                     // semantic is 1 means reply quick
                                     if (act.semantic == 1) {
                                       Map<String, dynamic> map = {};
-                                      act.inputs.forEach((e) {
+                                      (act.inputs ?? []).forEach((e) {
                                         print(
                                             "set inputs: ${e.label}<${e.resultKey}>");
-                                        map[e.resultKey] = "Auto reply from me";
+                                        map[e.resultKey ?? 'null'] =
+                                            "Auto reply from me";
                                       });
                                       act.postInputs(map);
                                     } else {
@@ -175,7 +176,7 @@ class _NotificationsLogState extends State<NotificationsLog> {
                                       act.tap();
                                     }
                                   },
-                                  child: Text(act.title));
+                                  child: Text(act.title ?? ''));
                             }).toList()
                               ..add(TextButton(
                                   child: Text("Full"),
