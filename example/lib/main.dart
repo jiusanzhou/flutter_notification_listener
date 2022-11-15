@@ -48,6 +48,7 @@ class _NotificationsLogState extends State<NotificationsLog> {
   }
 
   // we must use static method, to handle in background
+  @pragma('vm:entry-point') // prevent dart from stripping out this function on release build in Flutter 3.x
   static void _callback(NotificationEvent evt) {
     print("send evt to ui: $evt");
     final SendPort? send = IsolateNameServer.lookupPortByName("_listener_");
