@@ -138,10 +138,14 @@ And don't forget to add the permissions to the manifest,
 
 That means the `callbackHandle` static function is guaranteed, while the channel handle function is not. This is every useful when you should persist the events to the database.
 
+> For Flutter 3.x: 
+Annotate the _callback function with `@pragma('vm:entry-point')` to prevent Flutter from stripping out this function on services.
+
 We want to run some code in background without UI thread, like persist the notifications to database or storage.
 
 1. Define your own callback to handle the incoming notifications.
     ```dart
+    @pragma('vm:entry-point')
     static void _callback(NotificationEvent evt) {
         // persist data immediately
         db.save(evt)
