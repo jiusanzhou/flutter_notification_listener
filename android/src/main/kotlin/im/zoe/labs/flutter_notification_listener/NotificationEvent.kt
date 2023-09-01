@@ -156,7 +156,7 @@ class NotificationEvent(context: Context, sbn: StatusBarNotification) {
                     if (act.remoteInputs != null) {
                         act.remoteInputs.forEach {
                             val input = HashMap<String, Any>()
-                            input["label"] = it.label.toString()
+                            input["label"] = it.label?.toString() ?: ""
                             input["key"] = it.resultKey
                             // input["choices"] = it.choices
                             ins = ins + input
