@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
 import io.flutter.embedding.engine.FlutterEngineCache
+import io.flutter.embedding.engine.FlutterJNI
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.JSONMessageCodec
@@ -20,6 +21,10 @@ import java.util.*
 class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
   private var eventSink: EventChannel.EventSink? = null
 
+  private var methodChannel: MethodChannel? = null 
+  private var eventChannel: EventChannel? = null 
+  private val flutterJNI: FlutterJNI =  FlutterJNI() 
+
   private lateinit var mContext: Context
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -29,10 +34,20 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
 
     val binaryMessenger = flutterPluginBinding.binaryMessenger
 
-    // event stream channel
-    EventChannel(binaryMessenger, EVENT_CHANNEL_NAME).setStreamHandler(this)
     // method channel
-    MethodChannel(binaryMessenger, METHOD_CHANNEL_NAME).setMethodCallHandler(this)
+    val method = MethodChannel(binaryMessenger, METHOD_CHANNEL_NAME)
+    if(method != null) {
+      methodChannel = method
+      method.setMethodCallHandler(this)
+    }
+    // event stream channel
+    val event = EventChannel(binaryMessenger, EVENT_CHANNEL_NAME)
+    if(event != null) {
+      eventChannel = event
+      event.setStreamHandler(this)
+    }
+
+    flutterJNI.attachToNative() 
 
     // store the flutter engine
     val engine = flutterPluginBinding.flutterEngine
@@ -48,7 +63,18 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    // methodChannel.setMethodCallHandler(null)
+    val method = methodChannel
+    if (method != null) {
+      method.setMethodCallHandler(null) 
+      methodChannel = null 
+    }
+
+    val event = eventChannel
+    if (event != null) {
+      event.setStreamHandler(null) 
+      eventChannel = null 
+    }
+    flutterJNI.attachToNative() 
   }
 
   @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
