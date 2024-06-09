@@ -41,7 +41,7 @@ Then you should install it,
 
 **1. Register the service in the manifest**
 
-The plugin uses an Android system service to track notifications. To allow this service to run on your application, the following code should be put inside the Android manifest, between the tags.
+The plugin uses an Android system service to track notifications. To allow this service to run on your application, the following code should be put inside the Android manifest, between the `application` tags.
 
 ```xml
 <service android:name="im.zoe.labs.flutter_notification_listener.NotificationsHandlerService"
