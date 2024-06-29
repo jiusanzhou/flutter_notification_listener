@@ -57,8 +57,11 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
     val receiver = NotificationReceiver()
     val intentFilter = IntentFilter()
     intentFilter.addAction(NotificationsHandlerService.NOTIFICATION_INTENT)
-    mContext.registerReceiver(receiver, intentFilter)
-
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+         mContext.registerReceiver(broadcastReceiver, intentFilter, RECEIVER_EXPORTED)
+    }else {
+         mContext. registerReceiver(broadcastReceiver, intentFilter)
+    }
     Log.i(TAG, "attached engine finished")
   }
 
