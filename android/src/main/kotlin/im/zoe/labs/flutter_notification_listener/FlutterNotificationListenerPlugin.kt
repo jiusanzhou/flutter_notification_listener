@@ -2,7 +2,7 @@ package im.zoe.labs.flutter_notification_listener
 
 import android.app.ActivityManager
 import android.content.*
-import android.content.Context.RECEIVER_NOT_EXPORTED
+import android.content.Context.RECEIVER_EXPORTED
 import android.os.Build
 import android.util.Log
 import androidx.annotation.NonNull
