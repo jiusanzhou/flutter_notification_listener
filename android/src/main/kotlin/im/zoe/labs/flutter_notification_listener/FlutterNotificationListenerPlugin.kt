@@ -47,7 +47,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       eventChannel = event
       event.setStreamHandler(this)
     }
-
+    Log.i(TAG, "Attaching FlutterJNI to native")
     flutterJNI.attachToNative() 
 
     // store the flutter engine
@@ -78,7 +78,9 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       event.setStreamHandler(null) 
       eventChannel = null 
     }
-    flutterJNI.attachToNative() 
+
+    Log.i(TAG, "Detaching FlutterJNI from native")
+    flutterJNI.detachFromNativeAndReleaseResources()
   }
 
   @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
