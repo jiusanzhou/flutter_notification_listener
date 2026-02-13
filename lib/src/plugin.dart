@@ -164,6 +164,7 @@ class NotificationsListener {
 }
 
 /// callbackDispatcher use to install background channel
+@pragma('vm:entry-point')
 void callbackDispatcher({inited = true}) {
   WidgetsFlutterBinding.ensureInitialized();
 
