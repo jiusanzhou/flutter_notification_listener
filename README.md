@@ -1,55 +1,100 @@
 <div align="center">
 
-# flutter_notification_listener
+# Flutter Notification Listener
 
-[![Version](https://img.shields.io/pub/v/flutter_notification_listener.svg)](https://pub.dartlang.org/packages/flutter_notification_listener)
-[![pub points](https://badges.bar/flutter_notification_listener/pub%20points)](https://pub.dev/packages/flutter_notification_listener/score)
-[![popularity](https://badges.bar/flutter_notification_listener/popularity)](https://pub.dev/packages/flutter_notification_listener/score)
-[![likes](https://badges.bar/flutter_notification_listener/likes)](https://pub.dev/packages/flutter_notification_listener/score)
-[![License](https://img.shields.io/badge/license-AL2-blue.svg)](https://github.com/jiusanzhou/flutter_notification_listener/blob/master/LICENSE)
+**A powerful Flutter plugin for listening to all incoming notifications on Android**
 
-Flutter plugin to listen for all incoming notifications for Android.
+[![Pub Version](https://img.shields.io/pub/v/flutter_notification_listener?color=blue&logo=dart)](https://pub.dev/packages/flutter_notification_listener)
+[![Pub Points](https://img.shields.io/pub/points/flutter_notification_listener?color=green&logo=dart)](https://pub.dev/packages/flutter_notification_listener/score)
+[![GitHub Stars](https://img.shields.io/github/stars/jiusanzhou/flutter_notification_listener?style=flat&logo=github)](https://github.com/jiusanzhou/flutter_notification_listener)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
+[Features](#-features) · [Installation](#-installation) · [Quick Start](#-quick-start) · [API Reference](#-api-reference) · [Contributing](#-contributing)
 
 </div>
 
 ---
 
-## Features
+## ✨ Features
 
-- **Service**: start a service to listen the notifications.
-- **Simple**: it's simple to access notification's fields.
-- **Backgrounded**: execute the dart code in the background and auto start the service after reboot.
-- **Interactive**: the notification is interactive in flutter.
+<table>
+<tr>
+<td>
 
-## Installtion
+**🔔 Real-time Listening**
 
-Open the `pubspec.yaml` file located inside the app folder, and add `flutter_notification_listener`: under `dependencies`.
+Capture all system notifications as they arrive, from any app installed on the device.
+
+</td>
+<td>
+
+**🎯 Simple API**
+
+Clean and intuitive API design. Access notification fields with ease.
+
+</td>
+</tr>
+<tr>
+<td>
+
+**⚡ Background Execution**
+
+Run Dart code in the background. Auto-start service after device reboot.
+
+</td>
+<td>
+
+**🎮 Interactive**
+
+Tap notifications, trigger actions, and even auto-reply to messages directly from Flutter.
+
+</td>
+</tr>
+</table>
+
+### Compatibility
+
+| Android Version | API Level | Status |
+|-----------------|-----------|--------|
+| Android 14 | API 34 | ✅ Fully Supported |
+| Android 13 | API 33 | ✅ Fully Supported |
+| Android 12 | API 31-32 | ✅ Fully Supported |
+| Android 11 and below | API ≤ 30 | ✅ Fully Supported |
+
+---
+
+## 📦 Installation
+
+Add the dependency to your `pubspec.yaml`:
+
 ```yaml
 dependencies:
-  flutter_notification_listener: <latest_version>
+  flutter_notification_listener: ^1.4.0
 ```
 
-The latest version is 
-[![Version](https://img.shields.io/pub/v/flutter_notification_listener.svg)](https://pub.dartlang.org/packages/flutter_notification_listener)
+Then run:
 
-Then you should install it,
-- From the terminal: Run `flutter pub get`.
-- From Android Studio/IntelliJ: Click Packages get in the action ribbon at the top of `pubspec.yaml`.
-- From VS Code: Click Get Packages located in right side of the action ribbon at the top of `pubspec.yaml`.
+```bash
+flutter pub get
+```
 
-## Quick Start
+---
 
-**1. Register the service in the manifest**
+## 🚀 Quick Start
 
-The plugin uses an Android system service to track notifications. To allow this service to run on your application, the following code should be put inside the Android manifest, between the `application` tags.
+### Step 1: Configure Android Manifest
+
+Add the notification listener service inside the `<application>` tag:
 
 ```xml
-<service android:name="im.zoe.labs.flutter_notification_listener.NotificationsHandlerService"
+<service 
+    android:name="im.zoe.labs.flutter_notification_listener.NotificationsHandlerService"
     android:label="Flutter Notifications Handler"
     android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
     android:exported="true"
     android:foregroundServiceType="specialUse">
-    <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+    <property 
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
         android:value="notification_listener"/>
     <intent-filter>
         <action android:name="android.service.notification.NotificationListenerService" />
@@ -57,71 +102,67 @@ The plugin uses an Android system service to track notifications. To allow this 
 </service>
 ```
 
-And don't forget to add the permissions to the manifest,
+Add required permissions:
+
 ```xml
 <uses-permission android:name="android.permission.WAKE_LOCK" />
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-<!-- Required for Android 13+ (API 33) to show foreground service notification -->
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-<!-- Required for Android 14+ (API 34) for foreground services -->
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
 ```
 
-> **Note for Android 13+**: You need to request the `POST_NOTIFICATIONS` permission at runtime before starting the foreground service. See the example app for implementation details.
+> **Note:** For Android 13+, request the `POST_NOTIFICATIONS` permission at runtime before starting the foreground service.
 
-**2. Init the plugin and add listen handler**
-
-We have a default static event handler which send event with a channel.
-So if you can listen the event in the ui logic simply.
+### Step 2: Initialize the Plugin
 
 ```dart
-// define the handler for ui
+import 'package:flutter_notification_listener/flutter_notification_listener.dart';
+
 void onData(NotificationEvent event) {
-    print(event.toString());
+  print('${event.packageName}: ${event.title} - ${event.text}');
 }
 
 Future<void> initPlatformState() async {
-    NotificationsListener.initialize();
-    // register you event handler in the ui logic.
-    NotificationsListener.receivePort.listen((evt) => onData(evt));
+  NotificationsListener.initialize();
+  NotificationsListener.receivePort?.listen((evt) => onData(evt));
 }
 ```
 
-**3. Check permission and start the service**
+### Step 3: Start the Service
 
 ```dart
-void startListening() async {
-    print("start listening");
-    var hasPermission = await NotificationsListener.hasPermission;
-    if (!hasPermission) {
-        print("no permission, so open settings");
-        NotificationsListener.openPermissionSettings();
-        return;
-    }
+Future<void> startListening() async {
+  final hasPermission = await NotificationsListener.hasPermission ?? false;
+  
+  if (!hasPermission) {
+    NotificationsListener.openPermissionSettings();
+    return;
+  }
 
-    var isR = await NotificationsListener.isRunning;
-
-    if (!isR) {
-        await NotificationsListener.startService();
-    }
-
-    setState(() => started = true);
+  final isRunning = await NotificationsListener.isRunning ?? false;
+  
+  if (!isRunning) {
+    await NotificationsListener.startService(
+      foreground: true,
+      title: "Listening for notifications",
+    );
+  }
 }
 ```
+
+> 📖 See the [example app](./example/lib/main.dart) for a complete implementation.
 
 ---
 
-Please check the [./example/lib/main.dart](./example/lib/main.dart) for more detail.
+## 📖 Usage Guide
 
-## Usage
+### Auto-start After Reboot
 
-### Start the service after reboot
+Register a broadcast receiver to automatically restart the service after device reboot:
 
-It's every useful while you want to start listening notifications automatically after reboot.
-
-Register a broadcast receiver in the `AndroidManifest.xml`,
 ```xml
-<receiver android:name="im.zoe.labs.flutter_notification_listener.RebootBroadcastReceiver"
+<receiver 
+    android:name="im.zoe.labs.flutter_notification_listener.RebootBroadcastReceiver"
     android:enabled="true"
     android:exported="true">
     <intent-filter>
@@ -130,245 +171,166 @@ Register a broadcast receiver in the `AndroidManifest.xml`,
 </receiver>
 ```
 
-Then the listening service will start automatically when the system fired the `BOOT_COMPLETED` intent.
+Add the boot permission:
 
-
-And don't forget to add the permissions to the manifest,
 ```xml
-<uses-permission android:name="android.permission.WAKE_LOCK" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-<!-- Required for Android 13+ (API 33) to show foreground service notification -->
-<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-<!-- Required for Android 14+ (API 34) for foreground services -->
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
-<!-- This permission is for auto start service after reboot -->
 <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 ```
 
-### Execute task without UI thread
+### Background Processing
 
-> You should know that the function `(evt) => onData(evt)` would **not be called** if the ui thread is not running.
-
-**:warning: It's recommended that you should register your own static function `callbackHandle` to handle the event which make sure events consumed.**
-
-That means the `callbackHandle` static function is guaranteed, while the channel handle function is not. This is every useful when you should persist the events to the database.
-
-> For Flutter 3.x: 
-Annotate the _callback function with `@pragma('vm:entry-point')` to prevent Flutter from stripping out this function on services.
-
-We want to run some code in background without UI thread, like persist the notifications to database or storage.
-
-1. Define your own callback to handle the incoming notifications.
-    ```dart
-    @pragma('vm:entry-point')
-    static void _callback(NotificationEvent evt) {
-        // persist data immediately
-        db.save(evt)
-
-        // send data to ui thread if necessary.
-        // try to send the event to ui
-        print("send evt to ui: $evt");
-        final SendPort send = IsolateNameServer.lookupPortByName("_listener_");
-        if (send == null) print("can't find the sender");
-        send?.send(evt);
-    }
-    ```
-
-2. Register the handler when invoke the `initialize`.
-    ```dart
-    Future<void> initPlatformState() async {
-        // register the static to handle the events
-        NotificationsListener.initialize(callbackHandle: _callback);
-    }
-    ```
-
-3. Listen events in the UI thread if necessary.
-    ```dart
-    // define the handler for ui
-    void onData(NotificationEvent event) {
-        print(event.toString());
-    }
-
-    Future<void> initPlatformState() async {
-        // ...
-        // register you event handler in the ui logic.
-        NotificationsListener.receivePort.listen((evt) => onData(evt));
-    }
-    ```
-
-### Change notification of listening service
-
-Before you start the listening service, you can offer some parameters.
-```dart
-await NotificationsListener.startService({
-    bool foreground = true, // use false will not promote to foreground and without a notification
-    String title = "Change the title",
-    String description = "Change the text",
-});
-```
-
-### Tap the notification
-
-We can tap the notification if it can be triggered in the flutter side.
-
-
-For example, tap the notification automatically when the notification arrived.
+For reliable background execution, use a static callback function:
 
 ```dart
-// define the handler for ui
-void onData(NotificationEvent event) {
-    print(event.toString());
-    // tap the notification automatically
-    // usually remove the notification
-    if (event.canTap) event.tap();
+@pragma('vm:entry-point')
+static void _callback(NotificationEvent evt) {
+  // Persist data immediately
+  db.save(evt);
+  
+  // Forward to UI thread if needed
+  final send = IsolateNameServer.lookupPortByName("_listener_");
+  send?.send(evt);
+}
+
+Future<void> initPlatformState() async {
+  NotificationsListener.initialize(callbackHandle: _callback);
 }
 ```
 
-### Tap action of the notification
+> **Important:** The `@pragma('vm:entry-point')` annotation is required for Flutter 3.x to prevent the function from being stripped in release builds.
 
-The notifications from some applications will setted the actions.
-We can interact with the notificaions in the flutter side.
+### Interactive Notifications
 
-For example, make  the notification as readed automatically when the notification arrived.
+**Tap a notification:**
 
 ```dart
-// define the handler for ui
 void onData(NotificationEvent event) {
-    print(event.toString());
-    
-    events.actions.forEach(act => {
-        // semantic code is 2 means this is an ignore action
-        if (act.semantic == 2) {
-            act.tap();
-        }
-    })
+  if (event.canTap) {
+    event.tap();
+  }
 }
 ```
 
-### Reply to conversation of the notification
-
-Android provider a quick replying method in the notification.
-So we can use this to implement a reply logic in the flutter.
-
-For example, reply to the conversation automatically when the notification arrived.
+**Auto-reply to messages:**
 
 ```dart
-// define the handler for ui
 void onData(NotificationEvent event) {
-    print(event.toString());
-    
-    events.actions.forEach(act => {
-        // semantic is 1 means reply quick
-        if (act.semantic == 1) {
-            Map<String, dynamic> map = {};
-            act.inputs.forEach((e) {
-                print("set inputs: ${e.label}<${e.resultKey}>");
-                map[e.resultKey] = "Auto reply from flutter";
-            });
-
-            // send to the data
-            act.postInputs(map);
-        }
-    })
+  for (final action in event.actions ?? []) {
+    if (action.semantic == 1) { // SEMANTIC_ACTION_REPLY
+      final inputs = <String, dynamic>{};
+      for (final input in action.inputs ?? []) {
+        inputs[input.resultKey ?? ''] = "Auto-reply from Flutter";
+      }
+      action.postInputs(inputs);
+    }
+  }
 }
 ```
 
-## API Reference
+### Customize Service Notification
 
-### Object `NotificationEvent`
-
-Fields of `NotificationEvent`:
-- `uniqueId`: `String`, unique id of the notification which generated from `key`.
-- `key`: `String`, key of the status bar notification, required android sdk >= 20.
-- `packageName`: `String`, package name of the application which notification posted by.
-- `uid`: `int`, uid of the notification, required android sdk >= 29.
-- `channelId`: `String` channel if of the notification, required android sdk >= 26.
-- `id`: `int`, id of the notification.
-- `createAt`: `DateTime`, created time of the notfication in the flutter side.
-- `timestamp`: `int`, post time of the notfication.
-- `title`: `title`, title of the notification.
-- `text`: `String`, text of the notification.
-- `hasLargeIcon`: `bool`, if this notification has a large icon.
-- `largeIcon`: `Uint8List`, large icon of the notification which setted by setLargeIcon. To display as a image use the Image.memory widget.
-- `canTap`: `bool`, if this notification has content pending intent.
-- `raw`: `Map<String, dynamic>`, the original map of this notification, you can get all fields.
-
-Other original fields in `raw` which not assgin to the class:
-- `subText`: `String`, subText of the notification.
-- `summaryText`: `String`, summaryText of the notification.
-- `textLines`: `List<String>`, multi text lines of the notification.
-- `showWhen`: `bool`, if show the time of the notification.
-
-Methods for notification:
-- `Future<bool> tap()`: tap the notification if it can be triggered, you should check `canTap` first. Normally will clean up the notification.
-- `Future<dynamic> getFull()`: get the full notification object from android.
-
-### Object `Action`
-
-Fields of `Action`:
-- `id`: `int`, the index of the action in the actions array
-- `title`: `String`, title of the action
-- `semantic`: `int`, semantic type of the action, check below for details
-- `inputs`: `ActionInput`, emote inputs list of the action
-
-Action's semantic types:
-```
-SEMANTIC_ACTION_ARCHIVE = 5;
-SEMANTIC_ACTION_CALL = 10;
-SEMANTIC_ACTION_DELETE = 4;
-SEMANTIC_ACTION_MARK_AS_READ = 2;
-SEMANTIC_ACTION_MARK_AS_UNREAD = 3;
-SEMANTIC_ACTION_MUTE = 6;
-SEMANTIC_ACTION_NONE = 0;
-SEMANTIC_ACTION_REPLY = 1;
-SEMANTIC_ACTION_THUMBS_DOWN = 9;
-SEMANTIC_ACTION_THUMBS_UP = 8;
-SEMANTIC_ACTION_UNMUTE = 7;
+```dart
+await NotificationsListener.startService(
+  foreground: true,
+  title: "My App",
+  description: "Listening for notifications...",
+);
 ```
 
-For more details, please see [Notification.Action Constants](https://developer.android.com/reference/android/app/Notification.Action#constants_1).
+---
 
+## 📚 API Reference
 
-Methods of `Action`:
-- `Future<bool> tap()`: tap the action of the notification. If action's semantic code is `1`, it can't be tapped.
-- `Future<bool> postInputs(Map<String, dynamic> map)`: post inputs to the notification, useful for replying automaticly. Only works when semantic code  is `1`.
+### NotificationEvent
 
-### Object `ActionInput`
+| Property | Type | Description |
+|----------|------|-------------|
+| `uniqueId` | `String` | Unique identifier generated from key |
+| `packageName` | `String` | Source application package name |
+| `title` | `String?` | Notification title |
+| `text` | `String?` | Notification body text |
+| `timestamp` | `int` | Post time (milliseconds since epoch) |
+| `channelId` | `String?` | Notification channel ID (API 26+) |
+| `largeIcon` | `Uint8List?` | Large icon as bytes |
+| `canTap` | `bool` | Whether notification has a tap action |
+| `actions` | `List<Action>?` | Available notification actions |
+| `raw` | `Map<String, dynamic>` | Raw notification data |
 
-Fields of `ActionInput`:
-- `label`: `String`, label for input.
-- `resultKey`: `String`, result key for input. Must use correct to post data to inputs.
+**Methods:**
 
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `tap()` | `Future<bool>` | Trigger the notification's tap action |
+| `getFull()` | `Future<dynamic>` | Get complete notification data |
 
-### Class `NotificationsListener`
+### Action
 
-Fields of `NotificationsListener`:
-- `isRunning`: `bool`, check if the listener service is running.
-- `hasPermission`: `bool`, check if grant the permission to start the listener service.
-- `receivePort`: `ReceivePort`, default receive port for listening events.
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `int` | Action index |
+| `title` | `String?` | Action button text |
+| `semantic` | `int` | Semantic type (see below) |
+| `inputs` | `List<ActionInput>?` | Input fields for reply actions |
 
-Static methods of `NotificationsListener`:
-- `Future<void> initialize()`: initialize the plugin, must be called at first.
-- `Future<void> registerEventHandle(EventCallbackFunc callback)`: register the event handler which will be called from android service, **shoube be static function**.
-- `Future<void> openPermissionSettings()`: open the system listen notifactoin permission setting page.
-- `Future<bool?> startService({...})`: start the listening service. arguments,
-    - `foreground`: `bool`, optional, promote the service to foreground.
-    - `subTitle`: `String`, optional, sub title of the service's notification.
-    - `title`: `String`, optional, title of the service's notification.
-    - `description`: `String`, optional, text contenet of the service's notification.
-    - `showWhen`: `bool`, optional
-- `Future<bool?> stopService()`: stop the listening service.
-- `Future<void> promoteToForeground({...})` proomte the service to the foreground. *Arguments are same `startService`*.
-- `Future<void> demoteToBackground()`: demote the service to background.
+**Semantic Types:**
 
-## Known Issues
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `SEMANTIC_ACTION_NONE` | 0 | No semantic |
+| `SEMANTIC_ACTION_REPLY` | 1 | Quick reply |
+| `SEMANTIC_ACTION_MARK_AS_READ` | 2 | Mark as read |
+| `SEMANTIC_ACTION_MARK_AS_UNREAD` | 3 | Mark as unread |
+| `SEMANTIC_ACTION_DELETE` | 4 | Delete |
+| `SEMANTIC_ACTION_ARCHIVE` | 5 | Archive |
+| `SEMANTIC_ACTION_MUTE` | 6 | Mute |
+| `SEMANTIC_ACTION_UNMUTE` | 7 | Unmute |
 
-- If the service is not foreground, service will start failed after reboot.
+### NotificationsListener
 
-## Support
+| Method | Description |
+|--------|-------------|
+| `initialize({callbackHandle})` | Initialize the plugin |
+| `hasPermission` | Check notification access permission |
+| `isRunning` | Check if service is running |
+| `openPermissionSettings()` | Open system permission settings |
+| `startService({...})` | Start the listener service |
+| `stopService()` | Stop the listener service |
+| `promoteToForeground({...})` | Promote service to foreground |
+| `demoteToBackground()` | Demote service to background |
 
-Did you find this plugin useful? Please consider to make a donation to help improve it!
+---
 
-## Contributing
+## ⚠️ Known Issues
 
-Contributions are always welcome!
+- Service may fail to start after reboot if not running in foreground mode.
+
+---
+
+## 💖 Support
+
+If you find this plugin useful, please consider:
+
+- ⭐ Starring the repository
+- 🐛 Reporting bugs
+- 💡 Suggesting new features
+- 🤝 Contributing code
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+<div align="center">
+
+**Made with ❤️ by [Zoe](https://github.com/jiusanzhou)**
+
+</div>
