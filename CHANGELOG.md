@@ -1,3 +1,13 @@
+## 1.4.0
+
+- feat: add Android 14 (API 34) support
+- feat: upgrade Android Gradle Plugin to 8.7.0 and Kotlin to 2.1.0
+- fix: add `@pragma('vm:entry-point')` annotation to `callbackDispatcher` for Flutter 3.x compatibility
+- fix: add `RECEIVER_NOT_EXPORTED` flag for Android 13+ BroadcastReceiver registration
+- fix: handle nullable Drawable in `convertIconToByteArray`
+- chore: add required permissions for Android 13/14 (`POST_NOTIFICATIONS`, `FOREGROUND_SERVICE_SPECIAL_USE`)
+- chore: upgrade example project to new Flutter Gradle plugin format
+
 ## 1.3.4
 
 - chore: support gradle plugin version
