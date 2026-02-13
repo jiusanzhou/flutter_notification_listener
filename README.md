@@ -46,7 +46,11 @@ The plugin uses an Android system service to track notifications. To allow this 
 ```xml
 <service android:name="im.zoe.labs.flutter_notification_listener.NotificationsHandlerService"
     android:label="Flutter Notifications Handler"
-    android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+    android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+    android:exported="true"
+    android:foregroundServiceType="specialUse">
+    <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="notification_listener"/>
     <intent-filter>
         <action android:name="android.service.notification.NotificationListenerService" />
     </intent-filter>
@@ -57,7 +61,13 @@ And don't forget to add the permissions to the manifest,
 ```xml
 <uses-permission android:name="android.permission.WAKE_LOCK" />
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<!-- Required for Android 13+ (API 33) to show foreground service notification -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<!-- Required for Android 14+ (API 34) for foreground services -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
 ```
+
+> **Note for Android 13+**: You need to request the `POST_NOTIFICATIONS` permission at runtime before starting the foreground service. See the example app for implementation details.
 
 **2. Init the plugin and add listen handler**
 
@@ -112,7 +122,8 @@ It's every useful while you want to start listening notifications automatically 
 Register a broadcast receiver in the `AndroidManifest.xml`,
 ```xml
 <receiver android:name="im.zoe.labs.flutter_notification_listener.RebootBroadcastReceiver"
-    android:enabled="true">
+    android:enabled="true"
+    android:exported="true">
     <intent-filter>
         <action android:name="android.intent.action.BOOT_COMPLETED" />
     </intent-filter>
@@ -126,7 +137,11 @@ And don't forget to add the permissions to the manifest,
 ```xml
 <uses-permission android:name="android.permission.WAKE_LOCK" />
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-<!-- this pemission is for auto start service after reboot -->
+<!-- Required for Android 13+ (API 33) to show foreground service notification -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<!-- Required for Android 14+ (API 34) for foreground services -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+<!-- This permission is for auto start service after reboot -->
 <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 ```
 
