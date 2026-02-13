@@ -74,7 +74,7 @@ class FlutterNotificationListenerPlugin : FlutterPlugin, MethodChannel.MethodCal
       methodChannel = null 
     }
 
-    val even= eventChannel
+    val event = eventChannel
     if (event != null) {
       event.setStreamHandler(null) 
       eventChannel = null 
